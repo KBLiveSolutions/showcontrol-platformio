@@ -16,8 +16,8 @@ void onActiveSongName(OSCMessage &msg, int addrOffset) {
 void onActiveSongColor(OSCMessage &msg, int addrOffset) {
   char strBuf[32];
   msg.getString(0, strBuf, 32);
-  // Serial.print("onActiveSongColor OSC : ");
-  // Serial.println(strBuf);
+  // ETHERNET_DEBUG_LOG("onActiveSongColor OSC : ");
+  // ETHERNET_DEBUG_LOGLN(strBuf);
   msg.getString(1, strBuf, 32);
   _main.setActiveSongColor(hexStringtoRGB565(strBuf));
 }
@@ -74,8 +74,8 @@ void onActiveSectionName(OSCMessage &msg, int addrOffset) {
 
 void onActiveSectionIndex(OSCMessage &msg, int addrOffset) {
   // activeSectionIndex = (int) msg.getFloat(0);
-  // Serial.print(F("activeSectionIndex changed: "));
-  // Serial.println(activeSectionIndex);
+  // ETHERNET_DEBUG_LOG(F("activeSectionIndex changed: "));
+  // ETHERNET_DEBUG_LOGLN(activeSectionIndex);
   // // showSprite(_main.sections[activeSectionIndex], defaultTxtColor, sub1Sprite);    
   // int count = 0;
   //   for (int i = 0; i < MAX_SECTIONS; i++) {
@@ -93,14 +93,14 @@ void onActiveSectionIndex(OSCMessage &msg, int addrOffset) {
 void onActiveSectionStart(OSCMessage &msg, int addrOffset) {
   // _main.activeSectionStart = msg.getFloat(0);
   // _main.activeSectionEnd = 0;
-  // Serial.print("onActiveSectionStart: ");
-  // Serial.println(_main.activeSectionStart);
+  // ETHERNET_DEBUG_LOG("onActiveSectionStart: ");
+  // ETHERNET_DEBUG_LOGLN(_main.activeSectionStart);
 }
 
 void onActiveSectionEnd(OSCMessage &msg, int addrOffset) {
   // _main.activeSectionEnd = msg.getFloat(0);
-  // Serial.print("_main.activeSectionEnd: ");
-  // Serial.println(_main.activeSectionEnd);
+  // ETHERNET_DEBUG_LOG("_main.activeSectionEnd: ");
+  // ETHERNET_DEBUG_LOGLN(_main.activeSectionEnd);
 }
 
 void onActiveSectionColor(OSCMessage &msg, int addrOffset) {
@@ -121,17 +121,17 @@ void onSetlistName(OSCMessage &msg, int addrOffset) {
 
 
 void onBeatsPosition(OSCMessage &msg, int addrOffset) {
-  // Serial.print("global.beatsPosition: ");
-  // Serial.println(global.beatsPosition);
+  // ETHERNET_DEBUG_LOG("global.beatsPosition: ");
+  // ETHERNET_DEBUG_LOGLN(global.beatsPosition);
   global.beatsPosition = msg.getFloat(0);
   global.current_bar = int(global.beatsPosition / 4) + 1;
   global.current_beat = (int)global.beatsPosition % 4 + 1;
   global.setCurrentBar(global.current_bar);
   global.setCurrentBeat(global.current_beat);
-  // Serial.print("global.current_bar: ");
-  // Serial.print(global.current_bar);
-  // Serial.print(" | global.current_beat: ");
-  // Serial.println(global.current_beat);
+  // ETHERNET_DEBUG_LOG("global.current_bar: ");
+  // ETHERNET_DEBUG_LOG(global.current_bar);
+  // ETHERNET_DEBUG_LOG(" | global.current_beat: ");
+  // ETHERNET_DEBUG_LOGLN(global.current_beat);
   // globalPage.showCounter();
   // updateProgressBar();
   // showProgressBarMillis = millis();
@@ -140,8 +140,8 @@ void onBeatsPosition(OSCMessage &msg, int addrOffset) {
 
 void onIsPlaying(OSCMessage &msg, int addrOffset) {
   global.isPlaying = msg.getInt(0);
-  Serial.print("global.isPlaying: ");
-  Serial.println(global.isPlaying);
+  ETHERNET_DEBUG_LOG("global.isPlaying: ");
+  ETHERNET_DEBUG_LOGLN(global.isPlaying);
   global.setIsPlaying(global.isPlaying);
 }
 
@@ -151,9 +151,9 @@ void onAudioInterfaceScene(OSCMessage &msg, int addrOffset) {
 }
 
 void onLoopEnabled(OSCMessage &msg, int addrOffset) {
-  // Serial.print("global.loopEnabled ");
+  // ETHERNET_DEBUG_LOG("global.loopEnabled ");
   // global.loopEnabled = msg.getInt(0);
-  // Serial.print(global.loopEnabled);
+  // ETHERNET_DEBUG_LOG(global.loopEnabled);
   // if(activePage == pages[0]){
   // if (global.loopEnabled > 0) l[5].show_direct_color(255, 100, 0);
   // else l[5].led_off();
@@ -161,16 +161,16 @@ void onLoopEnabled(OSCMessage &msg, int addrOffset) {
 }
 
 void onLoopStart(OSCMessage &msg, int addrOffset) {
-  // Serial.print("onLoopStart ");
+  // ETHERNET_DEBUG_LOG("onLoopStart ");
   // global.loopStart = msg.getFloat(0);
-  // Serial.print(global.loopEnabled);
+  // ETHERNET_DEBUG_LOG(global.loopEnabled);
   // // showActiveSongProgressBar();
 }
 
 void onLoopEnd(OSCMessage &msg, int addrOffset) {
-  // Serial.print("global.loopEnabled ");
+  // ETHERNET_DEBUG_LOG("global.loopEnabled ");
   // global.loopEnd = msg.getFloat(0);
-  // Serial.print(global.loopEnabled);
+  // ETHERNET_DEBUG_LOG(global.loopEnabled);
   // // showActiveSongProgressBar();
 }
 
@@ -189,21 +189,21 @@ void onSignature(OSCMessage &msg, int addrOffset) {
 
 void onSections(OSCMessage &msg, int addrOffset) {
   // int size = msg.size();
-  // Serial.print("onSections size: ");
-  // Serial.println(size);
+  // ETHERNET_DEBUG_LOG("onSections size: ");
+  // ETHERNET_DEBUG_LOGLN(size);
   // for (int j = 0; j < size; j++) {
   //   char strBuf[MAX_SONG_NAME];
   //   msg.getString(j, strBuf, MAX_SONG_NAME);
   //   strcpy(_main.sections[j], strBuf);
-  //   Serial.print("_main.sections: ");
-  //   Serial.println(_main.sections[j]);
+  //   ETHERNET_DEBUG_LOG("_main.sections: ");
+  //   ETHERNET_DEBUG_LOGLN(_main.sections[j]);
   // }
 }
 
 void onSongs(OSCMessage &msg, int addrOffset) {
   // int size = msg.size();
-  // Serial.print("songs size: ");
-  // Serial.println(size);
+  // ETHERNET_DEBUG_LOG("songs size: ");
+  // ETHERNET_DEBUG_LOGLN(size);
   // _main. songsListSize = size;
   // for (int j = 0; j < size; j++) {
   //   char strBuf[MAX_SONG_NAME];
@@ -211,20 +211,20 @@ void onSongs(OSCMessage &msg, int addrOffset) {
   //   for (int i = 0; i < MAX_SONG_NAME; i++) {
   //     _main.songsList[j][i] = strBuf[i];
   //   }
-  //   Serial.print("songs: ");
-  //   Serial.println(_main.songsList[j]);
+  //   ETHERNET_DEBUG_LOG("songs: ");
+  //   ETHERNET_DEBUG_LOGLN(_main.songsList[j]);
   // }
   // mainPage.showSongsCounter();
 }
 
 void onSongDurations(OSCMessage &msg, int addrOffset) {
   // int size = msg.size();
-  // Serial.print("songs durations: ");
-  // Serial.println(size);
+  // ETHERNET_DEBUG_LOG("songs durations: ");
+  // ETHERNET_DEBUG_LOGLN(size);
   // for (int j = 0; j < size; j++) {
   //   _main.songDurations[j] = msg.getInt(j);
-  //   Serial.print("durations: ");
-  //   Serial.println(_main.songDurations[j]);
+  //   ETHERNET_DEBUG_LOG("durations: ");
+  //   ETHERNET_DEBUG_LOGLN(_main.songDurations[j]);
   // }
 }
 
@@ -232,8 +232,8 @@ void onSongDurations(OSCMessage &msg, int addrOffset) {
 
 void onSongColors(OSCMessage &msg, int addrOffset) {
   // int size = msg.size();
-  // Serial.print("colors size: ");
-  // Serial.println(size);
+  // ETHERNET_DEBUG_LOG("colors size: ");
+  // ETHERNET_DEBUG_LOGLN(size);
   // // for (int j = 0; j < size; j++) {
   // //   char strBuf[MAX_SONG_NAME];
   // //   msg.getString(j*2, strBuf, MAX_SONG_NAME);
@@ -246,8 +246,8 @@ void onSongColors(OSCMessage &msg, int addrOffset) {
   // // // activeSongColorShade = hexStringtoRGB565Shade(strBuf);
   // // // activeSectionColor = activeSongColorShade;
   // //   // }
-  // //   Serial.print("colors: ");
-  // //   Serial.println(songColors[j]);
+  // //   ETHERNET_DEBUG_LOG("colors: ");
+  // //   ETHERNET_DEBUG_LOGLN(songColors[j]);
   // // }
   // // showSongs();
 }
@@ -263,27 +263,27 @@ void onSubscribed(OSCMessage &msg, int addrOffset) {
       }
     }
   settings.getItStarted();
-  Serial.println("Subscribed to Ableset");
+  ETHERNET_DEBUG_LOGLN("Subscribed to Ableset");
   // char strBuf[32];
-  // Serial.println(msg.getString(0, strBuf, 32));
+  // ETHERNET_DEBUG_LOGLN(msg.getString(0, strBuf, 32));
 }
 
 void onHeartbeat(OSCMessage &msg, int addrOffset) {    
-  Serial.println("Heartbeat received");
+  ETHERNET_DEBUG_LOGLN("Heartbeat received");
   for (int i = 0; i < ethernet.totalServiceCount; i++) { // Iterate through all discovered services
       if (ethernet.discoveredServices[i].serviceType == ABLESETSRV && 
           ethernet.discoveredServices[i].ip == showcontrolUdp.remoteIP()) {
         ethernet.discoveredServices[i].lastSeen = millis();
         if(!ethernet.discoveredServices[i].subscribed){
-          Serial.println("Service already subscribed, updating last seen");
+          ETHERNET_DEBUG_LOGLN("Service already subscribed, updating last seen");
             ethernet.discoveredServices[i].subscribed = true; // Mark the service as subscribed
           settings.getItStarted(); // Trigger the handshake response to update the UI
         }
         break; // Exit the loop early since IPs are unique
       }
       else{
-        Serial.print("Service not found, adding service: ");
-        Serial.println(showcontrolUdp.remoteIP());
+        ETHERNET_DEBUG_LOG("Service not found, adding service: ");
+        ETHERNET_DEBUG_LOGLN(showcontrolUdp.remoteIP());
         ethernet.addService(ABLESETSRV, showcontrolUdp.remoteIP(), showcontrolUdp.remotePort());
         settings.getItStarted();
       }
@@ -291,11 +291,11 @@ void onHeartbeat(OSCMessage &msg, int addrOffset) {
 }
 
 void onError(OSCMessage &msg, int addrOffset) {
-  Serial.println(msg.getType(0));
+  ETHERNET_DEBUG_LOGLN(msg.getType(0));
 }
 
 void onLivePing(OSCMessage &msg, int addrOffset) {
-  // Serial.println(("Live Ping Received"));
+  // ETHERNET_DEBUG_LOGLN(("Live Ping Received"));
   // sendOSCShowControl("/showcontrol/ping");  
   // for (int i = 0; i < ethernet.totalServiceCount; i++) { // Iterate through all discovered services
   //     if (ethernet.discoveredServices[i].serviceType == SHOWCONTROLSRV && 
@@ -307,7 +307,7 @@ void onLivePing(OSCMessage &msg, int addrOffset) {
 }
 
 void onSCPong(OSCMessage &msg, int addrOffset) {
-  // Serial.println(("App Ping Received"));
+  // ETHERNET_DEBUG_LOGLN(("App Ping Received"));
   //   for (int i = 0; i < ethernet.totalServiceCount; i++) { // Iterate through all discovered services
   //     if (ethernet.discoveredServices[i].serviceType == SHOWCONTROLSRV && 
   //         ethernet.discoveredServices[i].ip == showcontrolUdp.remoteIP()) {
@@ -318,16 +318,16 @@ void onSCPong(OSCMessage &msg, int addrOffset) {
 }
 
 void onMessage(OSCMessage &msg, int addrOffset) {
-  Serial.println(("OSCMessage"));
+  ETHERNET_DEBUG_LOGLN(("OSCMessage"));
 }
 
 void onCCMessage(OSCMessage &msg, int addrOffset) {
-  // Serial.print("onCCMessage: ");
-  // Serial.print(msg.getInt(0)); //ch
-  // Serial.print(" / ");
-  // Serial.print(msg.getInt(1)); //control_id
-  // Serial.print(" / ");
-  // Serial.println(msg.getInt(2)); //val
+  // ETHERNET_DEBUG_LOG("onCCMessage: ");
+  // ETHERNET_DEBUG_LOG(msg.getInt(0)); //ch
+  // ETHERNET_DEBUG_LOG(" / ");
+  // ETHERNET_DEBUG_LOG(msg.getInt(1)); //control_id
+  // ETHERNET_DEBUG_LOG(" / ");
+  // ETHERNET_DEBUG_LOGLN(msg.getInt(2)); //val
   // // USER_MODE_1.checkLeds(msg.getInt(0), msg.getInt(1), msg.getInt(2));
   // // activePage.checkLeds(msg.getInt(0), msg.getInt(1), msg.getInt(2));
   // // if (msg.getInt(1) == 117) updateProgressBar( msg.getInt(2));
@@ -348,7 +348,7 @@ void onSerialMessage(OSCMessage &msg, int addrOffset) {
   // char strBuf[MAX_SONG_NAME];
   // msg.getString(0, strBuf, MAX_SONG_NAME);
   // int numPage = msg.getInt(1);
-  // Serial.println(strBuf);
+  // ETHERNET_DEBUG_LOGLN(strBuf);
   // if (strcmp(strBuf, "GET_CONFIG") == 0) jsonManager.sendJSONConfigOSC();
   // else if (strcmp(strBuf, "GET_PAGE") == 0) jsonManager.sendJSONPageOSC(numPage);
 }
@@ -361,10 +361,10 @@ void onDisplayMessage(OSCMessage &msg, int addrOffset) {
 }
 
 void onExMIDI(OSCMessage &msg, int addrOffset) {
-  // Serial.print("onExMIDI: ");
-  // Serial.print(msg.getInt(0));
-  // Serial.print(msg.getInt(1));
-  // Serial.println(msg.getInt(2));
+  // ETHERNET_DEBUG_LOG("onExMIDI: ");
+  // ETHERNET_DEBUG_LOG(msg.getInt(0));
+  // ETHERNET_DEBUG_LOG(msg.getInt(1));
+  // ETHERNET_DEBUG_LOGLN(msg.getInt(2));
   // int32_t packet[4] = {1, msg.getInt(0), msg.getInt(1), msg.getInt(2)};
   // // int32_t data = createUint32FromBytes(packet);
   // // write_to_other_core(data);
@@ -376,16 +376,14 @@ void receiveOSCMsg() {
   while (ethernet. showcontrolPacketSize--) msg.fill(showcontrolUdp.read());
 
   if (!msg.hasError()) {
-    if(oscDebug) {
-      Serial.print("OSC Packet Size: ");
-      Serial.println(ethernet. showcontrolPacketSize);
-      Serial.print("OSC Message Received: ");
-      Serial.print(msg.getAddress());
-      Serial.print(" From: ");
-      Serial.print(showcontrolUdp.remoteIP());
-      Serial.print(":");
-      Serial.println(showcontrolUdp.remotePort());
-    }
+    ETHERNET_DEBUG_LOG("OSC Packet Size: ");
+    ETHERNET_DEBUG_LOGLN(ethernet. showcontrolPacketSize);
+    ETHERNET_DEBUG_LOG("OSC Message Received: ");
+    ETHERNET_DEBUG_LOG(msg.getAddress());
+    ETHERNET_DEBUG_LOG(" From: ");
+    ETHERNET_DEBUG_LOG(showcontrolUdp.remoteIP());
+    ETHERNET_DEBUG_LOG(":");
+    ETHERNET_DEBUG_LOGLN(showcontrolUdp.remotePort());
 
     msg.route("/fromShowcontrolApp/serialMessage", onSerialMessage);
     msg.route("/fromShowcontrolApp/sysex", onSysexMessage);
@@ -453,7 +451,7 @@ void receiveOSCMsg() {
 
 
   } else {
-    Serial.println("Error OSC message");
+    ETHERNET_DEBUG_LOGLN("Error OSC message");
     msg.route("/error", onError);
   }
 }

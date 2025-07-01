@@ -28,8 +28,8 @@ void sendOSCAbleset(const char* address, Args... args) {
   oscMessage.add(get_uuid());
   for (int i = 0; i < ethernet.totalServiceCount; i++) {
     if (ethernet.discoveredServices[i].serviceType == ABLESETSRV) {
-      Serial.print("Send Ableset: ");
-      Serial.println(address);
+      ETHERNET_DEBUG_LOG("Send Ableset: ");
+      ETHERNET_DEBUG_LOGLN(address);
       showcontrolUdp.beginPacket(ethernet.discoveredServices[i].ip, ethernet.discoveredServices[i].port);
       oscMessage.send(showcontrolUdp);
       showcontrolUdp.endPacket();
@@ -43,11 +43,9 @@ void sendOSCShowControl(const char* address, Args... args) {
   addToOSCMessage(oscMessage, args...);
   for (int i = 0; i < ethernet.totalServiceCount; i++) {
     if (ethernet.discoveredServices[i].serviceType == SHOWCONTROLSRV) {
-      if (oscDebug) {
-        Serial.print("Send Showcontrol: ");
-        Serial.print(ethernet.discoveredServices[i].port);
-        Serial.println(address);
-      }
+      ETHERNET_DEBUG_LOG("Send Showcontrol: ");
+      ETHERNET_DEBUG_LOG(ethernet.discoveredServices[i].port);
+      ETHERNET_DEBUG_LOGLN(address);
       showcontrolUdp.beginPacket(ethernet.discoveredServices[i].ip, ethernet.discoveredServices[i].port);
       oscMessage.send(showcontrolUdp);
       showcontrolUdp.endPacket();

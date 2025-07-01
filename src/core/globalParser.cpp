@@ -9,60 +9,60 @@ Global global;
 void Global::setLoopEnabled(bool enabled){
     loopEnabled = enabled;
     if (enabled) {
-        Serial.println("Loop enabled");
+        ETHERNET_DEBUG_LOGLN("Loop enabled");
     } else {
-        Serial.println("Loop disabled");
+        ETHERNET_DEBUG_LOGLN("Loop disabled");
     }   
 };
 void Global::setLoopStart(float start){
     loopStart = start;
-    Serial.print("Loop start set to: ");
-    Serial.println(loopStart);  
+    ETHERNET_DEBUG_LOG("Loop start set to: ");
+    ETHERNET_DEBUG_LOGLN(loopStart);  
 };
 void Global::setLoopEnd(float end){
     loopEnd = end;
-    Serial.print("Loop end set to: ");
-    Serial.println(loopEnd);  
+    ETHERNET_DEBUG_LOG("Loop end set to: ");
+    ETHERNET_DEBUG_LOGLN(loopEnd);  
 };
 void Global::setBeatsPosition(float position){
     beatsPosition = position;
-    Serial.print("Beats position set to: ");
-    Serial.println(beatsPosition);  
+    ETHERNET_DEBUG_LOG("Beats position set to: ");
+    ETHERNET_DEBUG_LOGLN(beatsPosition);  
 };
 void Global::setCurrentBar(int bar){
     current_bar = bar;
-    Serial.print("Current bar set to: ");
-    Serial.println(current_bar);  
+    ETHERNET_DEBUG_LOG("Current bar set to: ");
+    ETHERNET_DEBUG_LOGLN(current_bar);  
 };
 void Global::setCurrentBeat(int beat){
     current_beat = beat;
-    Serial.print("Current beat set to: ");
-    Serial.println(current_beat);  
+    ETHERNET_DEBUG_LOG("Current beat set to: ");
+    ETHERNET_DEBUG_LOGLN(current_beat);  
     globalPage.showCounter();
 };
 void Global::setSigNumerator(int numerator){
     sig_numerator = numerator;
-    Serial.print("Signature numerator set to: ");
-    Serial.println(sig_numerator);  
+    ETHERNET_DEBUG_LOG("Signature numerator set to: ");
+    ETHERNET_DEBUG_LOGLN(sig_numerator);  
 };
 void Global::setSigDenominator(int denominator){
     sig_denominator = denominator;
-    Serial.print("Signature denominator set to: ");
-    Serial.println(sig_denominator);
+    ETHERNET_DEBUG_LOG("Signature denominator set to: ");
+    ETHERNET_DEBUG_LOGLN(sig_denominator);
 };
 void Global::setTempo(int newTempo){
     tempo = newTempo;
     snprintf(tempoStr, sizeof(tempoStr), "%d", tempo);
     globalPage.showTempo();
-    Serial.print("Tempo set to: ");
-    Serial.println(tempoStr);
+    ETHERNET_DEBUG_LOG("Tempo set to: ");
+    ETHERNET_DEBUG_LOGLN(tempoStr);
 };
 void Global::setIsPlaying(bool playing){
     isPlaying = playing;
     if (playing) {
-        Serial.println("Playback started");
+        ETHERNET_DEBUG_LOGLN("Playback started");
     } else {
-        Serial.println("Playback stopped");
+        ETHERNET_DEBUG_LOGLN("Playback stopped");
     }  
     if(activePage == pages[0]){
         if (global.isPlaying) l[1].show_green();

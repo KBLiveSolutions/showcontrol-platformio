@@ -137,27 +137,23 @@ void Main::setActiveSectionIndex(int index) {
   // activePage.showActiveSectionIndex();
 }
 void Main::setActiveSectionStart(float time) {
-  // activeSectionStart = time;
-  // activeSectionEnd = 0;
-  // if(oscDebug) Serial.print("onActiveSectionStart: ");
-  // if(oscDebug) Serial.println(activeSectionStart);
+  activeSectionStart = time;
+  activeSectionEnd = 0;
+  // DEBUG_LOG_VALUE("onActiveSectionStart changed: ", onActiveSectionStart);
 }
 void Main::setActiveSectionEnd(float time) {
-  // activeSectionEnd = time;
-  // if(oscDebug) Serial.print("activeSectionEnd: ");
-  // if(oscDebug) Serial.println(activeSectionEnd);
+  activeSectionEnd = time;
+  DEBUG_LOG_VALUE("activeSectionEnd changed: ", activeSectionEnd);
 }
 void Main::setActiveSectionColor(uint16_t color) {
-  // activeSectionColor = color;
-  // if(oscDebug) Serial.print("activeSectionColor: ");
-  // if(oscDebug) Serial.println(activeSectionColor);
+  activeSectionColor = color;
+  // DEBUG_LOG_VALUE("activeSectionColor changed: ", activeSectionColor);
   // activePage.showActiveSectionColor(activeSectionColor);
 }
 void Main::setSections(char sections[][MAX_SONG_NAME], int count) {
   // for (int i = 0; i < count; i++) {
   //   strcpy(activePage.sections[i], sections[i]);
-  //   if(oscDebug) Serial.print("sections: ");
-  //   if(oscDebug) Serial.println(activePage.sections[i]);
+  // DEBUG_LOG_VALUE("sections changed: ", activePage.sections[i]);
   // }
   // activePage.showSections(activePage.sections, count);
 }
@@ -165,24 +161,21 @@ void Main::setSongs(char songs[][MAX_SONG_NAME], int count) {
   // songsListSize = count;
   // for (int i = 0; i < count; i++) {
   //   strcpy(songsList[i], songs[i]);
-  //   if(oscDebug) Serial.print("songs: ");
-  //   if(oscDebug) Serial.println(songsList[i]);
+  // DEBUG_LOG_VALUE("songs changed: ", songsList[i]);
   // }
   // activePage.showSongs(songsList, count);
 }
 void Main::setSongDurations(int durations[], int count) {
   // for (int i = 0; i < count; i++) {
   //   songDurations[i] = durations[i];
-  //   if(oscDebug) Serial.print("durations: ");
-  //   if(oscDebug) Serial.println(songDurations[i]);
+  // DEBUG_LOG_VALUE("durations changed: ", songDurations);
   // }
   // activePage.showSongDurations(songDurations, count);
 }
 void Main::setSongColors(char colors[][MAX_SONG_NAME], int count) {
   // for (int i = 0; i < count; i++) {
   //   strcpy(songColors[i], colors[i]);
-  //   if(oscDebug) Serial.print("colors: ");
-  //   if(oscDebug) Serial.println(songColors[i]);
+  //   DEBUG_LOG_VALUE("Song colors changed: ", songColors[i]);
   // }
   // activePage.showSongColors(songColors, count);
 }
@@ -266,14 +259,12 @@ void Main::parseArrayItem(uint8_t itemType, char* strBuf, uint8_t listIndex, uin
   //     for (int i = 0; i < MAX_SONG_NAME; i++) {
   //       _main.setlistsList[listIndex][i] = strBuf[i];
   //     }
-  //   //   if (oscDebug) {
-  //   //     if(oscDebug) Serial.print("setlist: ");
-  //   //     if(oscDebug) Serial.print(listIndex);
-  //   //     if(oscDebug) Serial.print(" / ");
-  //   //     if(oscDebug) Serial.print(listLength);
-  //   //     if(oscDebug) Serial.print(" : ");
-  //   //     if(oscDebug) Serial.println(mainPage.setlistsList[listIndex]);
-  //   //   }
+  //   //     ETHERNET_DEBUG_LOG("setlist: ");
+  //   //     ETHERNET_DEBUG_LOG(listIndex);
+  //   //     ETHERNET_DEBUG_LOG(" / ");
+  //   //     ETHERNET_DEBUG_LOG(listLength);
+  //   //     ETHERNET_DEBUG_LOG(" : ");
+  //   //     ETHERNET_DEBUG_LOGLN(mainPage.setlistsList[listIndex]);
   //     menuPage.createMenu(SETLIST_MENU, 0);
   //     break;
 
@@ -282,14 +273,14 @@ void Main::parseArrayItem(uint8_t itemType, char* strBuf, uint8_t listIndex, uin
   //     for (int i = 0; i < MAX_SONG_NAME; i++) {
   //       _main.songsList[listIndex][i] = strBuf[i];
   //     }
-  //   //   if(oscDebug) Serial.print("songs: ");
-  //   //   if(oscDebug) Serial.println(mainPage.songsList[listIndex]);
+  //   //   ETHERNET_DEBUG_LOG("songs: ");
+  //   //   ETHERNET_DEBUG_LOGLN(mainPage.songsList[listIndex]);
   //     menuPage.createMenu(SONG_MENU, _main.activeSongIndex);
   //     break;
 
   //   default:
   //     // Optionnel : Gérer les cas non prévus
-  //   //   if(oscDebug) Serial.println("Unknown itemType");
+  //   //   ETHERNET_DEBUG_LOGLN("Unknown itemType");
   //     break;
   // }
 }

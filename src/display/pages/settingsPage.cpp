@@ -14,9 +14,6 @@ SettingsPage settingsPage;
 
 const char* SettingsPage::toConstChar(ItemContent item, char* buffer, size_t bufSize) {
   switch (item.type) {
-    // Serial.println("Converting ItemContent to const char*");
-    // Serial.print("Item type: ");
-    // Serial.println(item.type);
     case BOOL_TYPE:
       strncpy(buffer, item.boolValue ? "brrrr" : "false", bufSize);
       buffer[bufSize - 1] = '\0';
@@ -140,10 +137,6 @@ void SettingsPage::showSetting(int selectedItem){
     }
     char buf[16];
     showSettingsSprite(i, toConstChar(itemContent[i], buf, sizeof(buf)), defaultTxtColor);
-    // Serial.print("Setting item ");
-    // Serial.print(i);
-    // Serial.print(": ");
-    // Serial.println(buf);
   }
   showSprite("LEDs:", defaultTxtColor, brightnessTxtSprite);
   showSprite("Display:", defaultTxtColor, displayBrightTxtSprite);
@@ -156,10 +149,6 @@ void SettingsPage::showPage() {
   DEBUG_LOGLN("Settings page displayed.");
   for(int i=0; i<ITEMSAMNT; i++){
     showSetting(selectedItem);
-    // Serial.print("Showing setting item ");
-    // Serial.print(i);
-    // Serial.print(": ");
-    // Serial.println(toConstChar(itemContent[i], nullptr, 0));
   }
   isEditingValue = false;
 }

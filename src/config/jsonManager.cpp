@@ -12,7 +12,7 @@ JSONManager::JSONManager(const char* fname) : filename(fname) {
 
 bool JSONManager::begin() {
     if (!LittleFS.begin()) {
-        Serial.println("Failed to mount LittleFS");
+        DEBUG_LOGLN("Failed to mount LittleFS");
         return false;
     }
     return true;
@@ -21,14 +21,14 @@ bool JSONManager::begin() {
 bool JSONManager::loadFile() {
     File file = LittleFS.open(filename, "r");
     if (!file) {
-        Serial.println("Failed to open file for reading");
+        DEBUG_LOGLN("Failed to open file for reading");
         return false;
     }
     DeserializationError error = deserializeJson(doc, file);
     file.close();
     if (error) {
         Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.f_str());
+        DEBUG_LOGLN(error.f_str());
         return false;
     }
     options = doc["options"];
@@ -39,11 +39,11 @@ bool JSONManager::loadFile() {
 bool JSONManager::saveFile() {
     File file = LittleFS.open(filename, "w");
     if (!file) {
-        Serial.println("Failed to open file for writing");
+        DEBUG_LOGLN("Failed to open file for writing");
         return false;
     }
     if (serializeJson(doc, file) == 0) {
-        Serial.println(F("Failed to write to file"));
+        DEBUG_LOGLN(F("Failed to write to file"));
         file.close();
         return false;
     }
@@ -90,7 +90,7 @@ bool JSONManager::writeOption(const char* key, int value) {
 
 bool JSONManager::writeManualIP(int* ip) {
     if (!loadFile()) {
-        Serial.println("Failed to load JSON file");
+        DEBUG_LOGLN("Failed to load JSON file");
         return false;
     }
     for(int i=0; i<4; i++){
@@ -144,18 +144,18 @@ bool JSONManager::getPages() {
 
 void JSONManager::sendJSONConfig() {
     if (!doc.containsKey("options")) {
-        Serial.println("Options not found in JSON document");
+        DEBUG_LOGLN("Options not found in JSON document");
         return;
     }
     JsonDocument optionsDoc;
     optionsDoc["options"] = options;
     serializeJson(optionsDoc, Serial);
-    Serial.println("");
+    DEBUG_LOGLN("");
 }
 
 void JSONManager::sendJSONConfigOSC() {
     if (!doc.containsKey("options")) {
-        Serial.println("Options not found in JSON document");
+        DEBUG_LOGLN("Options not found in JSON document");
         return;
     }
     JsonDocument optionsDoc;
@@ -170,7 +170,7 @@ void JSONManager::sendJSONPage(int pageNum) {
     JsonDocument controlsDoc;
     controlsDoc["userPage"] = page;
     serializeJson(controlsDoc, Serial);
-    Serial.println("");
+    DEBUG_LOGLN("");
 }
 
 void JSONManager::sendJSONPageOSC(int pageNum) {
@@ -184,14 +184,14 @@ void JSONManager::sendJSONPageOSC(int pageNum) {
 }
 
 void JSONManager::setup() {
-    Serial.println(F("Inizializing FS..."));
+    DEBUG_LOGLN(F("Inizializing FS..."));
     if (LittleFS.begin()) {
-        Serial.println(F("done."));
+        DEBUG_LOGLN(F("done."));
     } else {
-        Serial.println(F("fail."));
+        DEBUG_LOGLN(F("fail."));
     }
     if (!LittleFS.begin()) {
-        Serial.println("Failed to mount LittleFS");
+        DEBUG_LOGLN("Failed to mount LittleFS");
         return;
     }
     if (!jsonManager.begin()) return;
@@ -202,9 +202,9 @@ void JSONManager::setup() {
     _main.selectedMode = jsonManager.getSelectedMode();
     settings.userPagesAmount = jsonManager.getUserPagesAmount();
     Serial.print("Selected mode: ");
-    Serial.println(_main.selectedMode);
+    DEBUG_LOGLN(_main.selectedMode);
     Serial.print("User pages amount: ");
-    Serial.println(settings.userPagesAmount);
+    DEBUG_LOGLN(settings.userPagesAmount);
     showcontrolLocalPort = jsonManager.getPort();
     settings.ledBrightness = jsonManager.getLedBrightness();
     settings.displayBrightness = jsonManager.getDisplayBrightness();
@@ -217,7 +217,7 @@ void JSONManager::setup() {
     Serial.print(manualIP[0]); Serial.print(".");
     Serial.print(manualIP[1]); Serial.print(".");
     Serial.print(manualIP[2]); Serial.print(".");
-    Serial.print(manualIP[3]); Serial.println();
+    Serial.print(manualIP[3]); DEBUG_LOGLN();
     jsonManager.getPages();
 }
 

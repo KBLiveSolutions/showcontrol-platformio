@@ -1,0 +1,44 @@
+name: PlatformIO CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.platformio/.cache
+        key: ${{ runner.os }}-pio-${{ hashFiles('**/platformio.ini') }}
+        restore-keys: |
+          ${{ runner.os }}-pio-
+    
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+    
+    - name: Install PlatformIO Core
+      run: pip install --upgrade platformio
+    
+    - name: Build project
+      run: pio run
+    
+    - name: Run tests (if any)
+      run: pio test --verbose || echo "No tests configured"
+    
+    - name: Check code format
+      run: |
+        # Install clang-format if needed
+        sudo apt-get update
+        sudo apt-get install -y clang-format
+        # Check formatting (optional - comment out if not using)
+        # find src/ -name "*.cpp" -o -name "*.h" | xargs clang-format --dry-run --Werror

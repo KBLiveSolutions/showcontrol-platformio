@@ -208,17 +208,17 @@ IPAddress manualIP(jsonManager.getIPNum(0), jsonManager.getIPNum(1), jsonManager
   else {
     ETHERNET_DEBUG_LOGLN("Link ON");
     if(useDHCP) {
-      if(ethernetDebug) Serial.println("Start DHCP");
+      ETHERNET_DEBUG_LOGLN("Start DHCP");
       if (Ethernet.begin(mac) == 0) {
-        if(ethernetDebug) Serial.println("DHCP Failed");
+        ETHERNET_DEBUG_LOGLN("DHCP Failed");
         Ethernet.begin(mac, manualIP, myDns, gateway, subnet);
       }
       else {
-        if(ethernetDebug) Serial.println("DHCP Success");
+        ETHERNET_DEBUG_LOGLN("DHCP Success");
       }
     }
     else {
-      if(ethernetDebug) Serial.println("Manual IP");
+      ETHERNET_DEBUG_LOGLN("Manual IP");
       Ethernet.setLocalIP(manualIP);
       Ethernet.begin(mac, manualIP, myDns, gateway, subnet);
     }
@@ -226,10 +226,10 @@ IPAddress manualIP(jsonManager.getIPNum(0), jsonManager.getIPNum(1), jsonManager
     int buf[4] = {localIP[0], localIP[1], localIP[2], localIP[3]};
     // showcontrolUdp.begin(showcontrolLocalPort);
     if (showcontrolUdp.begin(showcontrolLocalPort)) {
-  Serial.print("UDP started successfully on port : ");
-  Serial.println(showcontrolLocalPort);
+  ETHERNET_DEBUG_LOG("UDP started successfully on port : ");
+  ETHERNET_DEBUG_LOGLN(showcontrolLocalPort);
 } else {
-  Serial.println("UDP start failed");
+  ETHERNET_DEBUG_LOGLN("UDP start failed");
 }
     setupEthernetDone = true;
     showIP(buf);
@@ -255,7 +255,7 @@ void EthernetManager::checkEthernetConnection(){
     }
   } 
   else {
-    if(ethernetDebug) Serial.println("LinkOff");
+    ETHERNET_DEBUG_LOGLN("LinkOff");
       // showSprite("Link Off", defaultTxtColor, sub2Sprite);
       setupEthernetDone = false;  // Flag the setup to rerun when cable is connected
   }
@@ -273,14 +273,14 @@ void EthernetManager::read() {
 
   if (totalServiceCount > 0 && showcontrolPacketSize) {
     if(ethernetDebug){
-      Serial.print("Message received from: ");
-      Serial.print(showcontrolUdp.remoteIP());
-      Serial.print(" : ");
-      Serial.print(showcontrolUdp.remotePort());
-      Serial.print(" to: ");
-      Serial.print(manualIP);
-      Serial.print(" port: ");
-      Serial.println(showcontrolLocalPort);
+      ETHERNET_DEBUG_LOG("Message received from: ");
+      ETHERNET_DEBUG_LOG(showcontrolUdp.remoteIP());
+      ETHERNET_DEBUG_LOG(" : ");
+      ETHERNET_DEBUG_LOG(showcontrolUdp.remotePort());
+      ETHERNET_DEBUG_LOG(" to: ");
+      ETHERNET_DEBUG_LOG(manualIP);
+      ETHERNET_DEBUG_LOG(" port: ");
+      ETHERNET_DEBUG_LOGLN(showcontrolLocalPort);
     }
     receiveOSCMsg();
   } 
@@ -308,15 +308,12 @@ void serviceFoundCallback(const char* type, MDNSServiceProtocol /*proto*/, const
   } 
   else {
     IPAddress ip(ipAddr[0], ipAddr[1], ipAddr[2], ipAddr[3]);
-    if (ethernetDebug)  // Check if ethernetDebug is enabled
-      {      
-        Serial.print("Service found: ");
-        Serial.print(name);
-        Serial.print(" at IP: ");
-        Serial.print(ip);
-        Serial.print(" on port: ");
-        Serial.println(port); 
-      }
+    ETHERNET_DEBUG_LOG("Service found: ");
+    ETHERNET_DEBUG_LOG(name);
+    ETHERNET_DEBUG_LOG(" at IP: ");
+    ETHERNET_DEBUG_LOG(ip);
+    ETHERNET_DEBUG_LOG(" on port: ");
+    ETHERNET_DEBUG_LOG(port); 
     if(port > 100 && ipAddr[0] == localIP[0] && ipAddr[1] == localIP[1] && ipAddr[2] == localIP[2]){
       // Vérification directe du nom du service
       if(strcmp(name, "showcontrol") == 0) {
@@ -328,12 +325,10 @@ void serviceFoundCallback(const char* type, MDNSServiceProtocol /*proto*/, const
         char len = *txtContent++; 
         int i=0;
         const char ablesetString[] = "server=ableset";  // const pour optimisation
-        if (ethernetDebug){        
-            Serial.print("txtContent: ");
-            Serial.print(txtContent);
-            Serial.print(" len: ");
-            Serial.println(len);
-          } 
+        ETHERNET_DEBUG_LOG("txtContent: ");
+        ETHERNET_DEBUG_LOG(txtContent);
+        ETHERNET_DEBUG_LOG(" len: ");
+        ETHERNET_DEBUG_LOGLN(len);
         while (len) {
           i = 0;
           while (len--)
