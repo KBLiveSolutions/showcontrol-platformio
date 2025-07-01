@@ -121,6 +121,59 @@ showcontrol/
 └── README.md                     # Ce fichier
 ```
 
+## 🗂️ Filesystem et Configuration
+
+Ce projet utilise LittleFS pour stocker les données de configuration de manière persistante :
+
+### Configuration Automatique ✅
+
+Le filesystem est **automatiquement construit** lors de la compilation grâce au script `scripts/build_filesystem.py`. Les fichiers dans le dossier `data/` sont intégrés dans l'image du filesystem.
+
+### Structure des Données
+
+```
+data/
+└── data.json          # Configuration complète (réseau, pages, contrôles)
+```
+
+### Commandes de Build
+
+```bash
+# Build normal avec filesystem automatique
+pio run
+
+# Build du filesystem uniquement 
+pio run --target buildfs
+
+# Upload du firmware seulement
+pio run --target upload
+
+# Upload du filesystem seulement
+pio run --target uploadfs
+
+# Upload complet (recommandé pour la première utilisation)
+python scripts/upload_filesystem.py
+```
+
+### Performance
+
+| Opération | Temps | Impact |
+|-----------|-------|---------|
+| Build normal | +2-3s | Filesystem inclus automatiquement |
+| Upload filesystem | +10-15s | Une seule fois nécessaire |
+| Upload firmware | Normal | Pas d'impact |
+
+**Recommandation** : En développement, uploadez le filesystem une seule fois, puis seulement le code.
+
+### Tâches VS Code
+
+Utilisez `Ctrl+Shift+P` → "Tasks: Run Task" :
+- **ShowControl: Complete Build** - Build complet (défaut)
+- **PlatformIO: Build Filesystem** - Build filesystem uniquement
+- **PlatformIO: Upload All** - Upload complet
+
+📖 **Documentation complète** : [docs/FILESYSTEM.md](docs/FILESYSTEM.md)
+
 ## ⚙️ Configuration
 
 ### Configuration réseau
