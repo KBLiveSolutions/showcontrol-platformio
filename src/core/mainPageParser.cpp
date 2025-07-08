@@ -11,6 +11,7 @@
 #include "../display/pages/menuPage.h"
 #include "../display/colors.h"
 
+#include "../leds/leds.h"
 #include "../midi/midi_out.h"
 #include "../osc/OSCManager.h"
 
@@ -81,6 +82,48 @@ void Main::setActiveSongIndex(int index) {
   activeSongIndex = index;
   DEBUG_LOG_VALUE("activeSongIndex changed: ", activeSongIndex);
   mainPage.showSongsCounter(true);
+
+  // Validation des paramètres pour éviter les erreurs
+  if (_main.songsListSize <= 0) {
+    DEBUG_LOG_VALUE("showSongsCounter: invalid songsListSize: ", _main.songsListSize);
+    return;
+  }
+  
+  if (_main.activeSongIndex < 0) {
+    DEBUG_LOG_VALUE("showSongsCounter: invalid activeSongIndex: ", _main.activeSongIndex);
+    return;
+  }
+
+  // Contrôle des LEDs selon la position dans la liste
+  // LED 3 (index 4 dans le tableau l[]) - contrôle "précédent"
+  if (_main.activeSongIndex == 0) {
+    // Première chanson : LED 3 éteinte (pas de précédent)
+    if (3 < NUM_LEDS && l) {
+      l[3].led_off();
+      DEBUG_LOGLN("LED 3 OFF - First song");
+    }
+  } else {
+    // Pas la première chanson : LED 3 en blanc
+    if (3 < NUM_LEDS && l) {
+      l[3].show_white();  // Blanc
+      DEBUG_LOGLN("LED 3 WHITE - Previous available");
+    }
+  }
+  
+  // LED 4 (index 5 dans le tableau l[]) - contrôle "suivant"
+  if (_main.activeSongIndex == _main.songsListSize - 1) {
+    // Dernière chanson : LED 4 éteinte (pas de suivant)
+    if (4 < NUM_LEDS && l) {
+      l[4].led_off();
+      DEBUG_LOGLN("LED 4 OFF - Last song");
+    }
+  } else {
+    // Pas la dernière chanson : LED 4 en blanc
+    if (4 < NUM_LEDS && l) {
+      l[4].show_white();  // Blanc
+      DEBUG_LOGLN("LED 4 WHITE - Next available");
+    }
+  }
 }
 
 void Main::setActiveSongDuration(float duration) {
@@ -259,12 +302,12 @@ void Main::parseArrayItem(uint8_t itemType, char* strBuf, uint8_t listIndex, uin
   //     for (int i = 0; i < MAX_SONG_NAME; i++) {
   //       _main.setlistsList[listIndex][i] = strBuf[i];
   //     }
-  //   //     ETHERNET_DEBUG_LOG("setlist: ");
-  //   //     ETHERNET_DEBUG_LOG(listIndex);
-  //   //     ETHERNET_DEBUG_LOG(" / ");
-  //   //     ETHERNET_DEBUG_LOG(listLength);
-  //   //     ETHERNET_DEBUG_LOG(" : ");
-  //   //     ETHERNET_DEBUG_LOGLN(mainPage.setlistsList[listIndex]);
+  //   //     DEBUG_LOG("setlist: ");
+  //   //     DEBUG_LOG(listIndex);
+  //   //     DEBUG_LOG(" / ");
+  //   //     DEBUG_LOG(listLength);
+  //   //     DEBUG_LOG(" : ");
+  //   //     DEBUG_LOGLN(mainPage.setlistsList[listIndex]);
   //     menuPage.createMenu(SETLIST_MENU, 0);
   //     break;
 
@@ -273,14 +316,14 @@ void Main::parseArrayItem(uint8_t itemType, char* strBuf, uint8_t listIndex, uin
   //     for (int i = 0; i < MAX_SONG_NAME; i++) {
   //       _main.songsList[listIndex][i] = strBuf[i];
   //     }
-  //   //   ETHERNET_DEBUG_LOG("songs: ");
-  //   //   ETHERNET_DEBUG_LOGLN(mainPage.songsList[listIndex]);
+  //   //   DEBUG_LOG("songs: ");
+  //   //   DEBUG_LOGLN(mainPage.songsList[listIndex]);
   //     menuPage.createMenu(SONG_MENU, _main.activeSongIndex);
   //     break;
 
   //   default:
   //     // Optionnel : Gérer les cas non prévus
-  //   //   ETHERNET_DEBUG_LOGLN("Unknown itemType");
+  //   //   DEBUG_LOGLN("Unknown itemType");
   //     break;
   // }
 }

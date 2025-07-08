@@ -2,20 +2,14 @@
 #include "../config/consts.h"
 
 // Macros de debug centralisées pour une utilisation dans tout le projet
-#define DEBUG_LOG(message) if(oscDebug) { Serial.print(message); }
-#define DEBUG_LOGLN(message) if(oscDebug) { Serial.println(message); }
-#define DEBUG_LOG_VALUE(label, value) if(oscDebug) { Serial.print(label); Serial.println(value); }
-
-// Macros spécifiques pour le debug ethernet
-#define ETHERNET_DEBUG_LOG(message) if(ethernetDebug) { Serial.print(message); }
-#define ETHERNET_DEBUG_LOGLN(message) if(ethernetDebug) { Serial.println(message); }
-#define ETHERNET_DEBUG_LOG_VALUE(label, value) if(ethernetDebug) { Serial.print(label); Serial.println(value); }
+#define DEBUG_LOG(message) if(debugOn) { Serial.print(message); }
+#define DEBUG_LOGLN(message) if(debugOn) { Serial.println(message); }
+#define DEBUG_LOG_VALUE(label, value) if(debugOn) { Serial.print(label); Serial.println(value); }
 
 extern long unsigned _now;
 
 // Variables de debug globales
-extern bool ethernetDebug;
-extern bool oscDebug;
+extern bool debugOn;
 
 typedef enum { NOTE, CC, PC, FIXED } control_type_t; 
 extern control_type_t controlType[4];

@@ -50,4 +50,4 @@ void onSysexMessage(OSCMessage &msg, int addrOffset);
 void onSerialMessage(OSCMessage &msg, int addrOffset);
 void onDisplayMessage(OSCMessage &msg, int addrOffset);
 void onExMIDI(OSCMessage &msg, int addrOffset);
-void receiveOSCMsg();
+void receiveOSCMsg(char*, int );

@@ -106,15 +106,15 @@ bool buttns::wasLongPressed(uint8_t idx)
 
 void buttns::onShortButtonPress(uint8_t p)
 {
-  if (p == 0) onLockButtonPress();
-  else if (p == 6) onEncoderButtonPress();
+  // if (p == 0) onLockButtonPress();
+  if (p == 6) onEncoderButtonPress();
   else onButtonShortPress(p - 1); // p-1 pour les boutons PCF
 }
 
 void buttns::onLongButtonPress(uint8_t p)
 {
-  if (p == 0) onLockButtonLongPress();
-  else if (p == 6) onEncoderButtonLongPress();
+  // if (p == 0) onLockButtonLongPress();
+  if (p == 6) onEncoderButtonLongPress();
   else onButtonLongPress(p - 1); // p-1 pour les boutons PCF
 }
 

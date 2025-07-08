@@ -65,3 +65,7 @@
 firmware.bin
 firmware.elf
 firmware.uf2
+
+# Deprecated files
+showcontrol_refactor.ino
+*_refactor.ino

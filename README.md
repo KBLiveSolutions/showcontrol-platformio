@@ -34,6 +34,27 @@ ShowControl est un système de contrôle MIDI avancé conçu pour les performanc
 - **Sprites personnalisés** - Graphiques optimisés
 - **Luminosité adaptive** - Ajustement automatique
 - **Animations fluides** - Transitions visuelles
+- **Module LED optimisé** - Gestion efficace des couleurs avec structures typées
+- **Palette de 128 couleurs** - Stockage PROGMEM pour économiser la RAM
+- **Correction gamma** - Rendu naturel des couleurs LED
+- **Interpolation de couleurs** - Transitions fluides et effets visuels
+- **Configuration par rangées** - Organisation logique des LEDs
+
+### 💾 Gestion de Configuration
+- **JSONManager optimisé** - Gestionnaire de configuration robuste et performant
+- **Validation étendue** - Vérification des paramètres avec valeurs par défaut sécurisées
+- **Opérations batch** - Regroupement des modifications pour meilleures performances
+- **Gestion d'erreurs avancée** - Retours d'erreur détaillés avec structure `JsonResult`
+- **Sauvegarde intelligente** - Système "dirty flag" pour éviter écritures inutiles
+- **ArduinoJson v7** - Utilisation de la dernière version avec `JsonDocument`
+- **Création automatique** - Configuration par défaut si fichier corrompu/absent
+- **Diagnostics intégrés** - Outils de débogage et surveillance mémoire
+
+### 💾 Système de fichiers
+- **LittleFS intégré** - Stockage persistant sur flash (512KB)
+- **Build automatique** - Construction du filesystem à chaque compilation
+- **Accès rapide** - Lecture/écriture de fichiers de configuration
+- **Scripts optimisés** - Upload simplifié firmware + données
 
 ## 🛠️ Technologies utilisées
 
@@ -194,22 +215,41 @@ Le protocole SysEx utilise :
 
 ## 🔧 Optimisations récentes
 
-Le projet a bénéficié d'optimisations majeures :
+Le projet a bénéficié d'optimisations majeures dans plusieurs modules clés :
 
-### ✅ **Sécurité et robustesse**
-- Validation stricte des paramètres d'entrée
+### 🎛️ **JSONManager (Module de Configuration)**
+- **Gestion d'erreurs robuste** avec structure `JsonResult` pour retours détaillés
+- **Validation étendue** de tous les paramètres avec valeurs par défaut sécurisées
+- **Opérations batch** pour regrouper les modifications et améliorer les performances
+- **Migration ArduinoJson v7** avec `JsonDocument` moderne et API mise à jour
+- **Sauvegarde intelligente** avec système "dirty flag" évitant les écritures inutiles
+- **Diagnostics intégrés** pour surveillance mémoire et débogage système
+- **Sauvegardes atomiques** avec fichiers temporaires pour éviter la corruption
+
+### 💡 **LED Utilities (Gestion LED Optimisée)**
+- **Structures typées** `RGBColor` et `LedRow` pour meilleure lisibilité et sécurité
+- **Stockage PROGMEM** pour palette de 128 couleurs (économie RAM significative)
+- **Correction gamma** intégrée pour rendu naturel des couleurs LED
+- **Interpolation de couleurs** pour transitions fluides et effets visuels
+- **Organisation par rangées** pour configuration logique des LEDs
+
+### ✅ **Sécurité et robustesse globale**
+- Validation stricte des paramètres d'entrée (CC MIDI 0-127, canaux 1-16)
 - Protection contre les débordements de buffer
 - Gestion d'erreur robuste avec logs détaillés
+- Création automatique de configuration par défaut si corruption
 
-### ✅ **Performance**
+### ✅ **Performance optimisée**
 - Constantes `constexpr` pour l'optimisation compile-time
 - Réduction de la duplication de code
-- Gestion mémoire optimisée
+- Gestion mémoire optimisée avec allocations intelligentes
+- Sauvegarde conditionnelle pour éviter I/O inutiles
 
-### ✅ **Maintenabilité**
+### ✅ **Maintenabilité améliorée**
 - Centralisation des constantes SysEx dans `midi.h`
 - Fonctions spécialisées et modulaires
 - Documentation complète avec commentaires Doxygen
+- Code organisé en sections logiques claires
 
 ### ✅ **Debug unifié**
 - Macros de debug centralisées dans `utils.h`
@@ -218,10 +258,20 @@ Le projet a bénéficié d'optimisations majeures :
 
 ## 📚 Documentation
 
+### Optimisations modules
+- [**JSONManager optimisé**](docs/JSONMANAGER_OPTIMIZATIONS.md) - Gestionnaire de configuration robuste
+- [**LED Utilities optimisé**](docs/LED_OPTIMIZATIONS.md) - Module LED avec structures typées
+- [**Filesystem intégré**](docs/FILESYSTEM.md) - Système de fichiers automatique
+
+### Guides techniques
 - [Guide d'optimisation MIDI](OPTIMISATIONS_MIDI_OUT.md)
 - [Centralisation SysEx](CENTRALISATION_SYSEX.md)
 - [Optimisations Settings Parser](OPTIMISATIONS_SETTINGS_PARSER.md)
 - [Optimisations MIDI In](OPTIMISATIONS_MIDI_IN.md)
+
+### Exemples d'utilisation
+- [**JSONManager usage**](examples/jsonManager_usage_example.cpp) - Utilisation du gestionnaire JSON
+- [**LED utilities usage**](examples/led_usage_example.cpp) - Exemples d'utilisation des LEDs
 
 ## 🤝 Contribution
 

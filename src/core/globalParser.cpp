@@ -9,60 +9,66 @@ Global global;
 void Global::setLoopEnabled(bool enabled){
     loopEnabled = enabled;
     if (enabled) {
-        ETHERNET_DEBUG_LOGLN("Loop enabled");
-    } else {
-        ETHERNET_DEBUG_LOGLN("Loop disabled");
+        if(activePage == pages[0]){
+            l[5].setColor(80, 0); // Set to yellow
+            l[5].show_color();
+        }
+        DEBUG_LOGLN("Loop enabled");
+    } 
+    else {
+            l[5].setColor(81, 0); // Set to yellow
+            l[5].show_color();
     }   
 };
 void Global::setLoopStart(float start){
     loopStart = start;
-    ETHERNET_DEBUG_LOG("Loop start set to: ");
-    ETHERNET_DEBUG_LOGLN(loopStart);  
+    DEBUG_LOG("Loop start set to: ");
+    DEBUG_LOGLN(loopStart);  
 };
 void Global::setLoopEnd(float end){
     loopEnd = end;
-    ETHERNET_DEBUG_LOG("Loop end set to: ");
-    ETHERNET_DEBUG_LOGLN(loopEnd);  
+    DEBUG_LOG("Loop end set to: ");
+    DEBUG_LOGLN(loopEnd);  
 };
 void Global::setBeatsPosition(float position){
     beatsPosition = position;
-    ETHERNET_DEBUG_LOG("Beats position set to: ");
-    ETHERNET_DEBUG_LOGLN(beatsPosition);  
+    DEBUG_LOG("Beats position set to: ");
+    DEBUG_LOGLN(beatsPosition);  
 };
 void Global::setCurrentBar(int bar){
     current_bar = bar;
-    ETHERNET_DEBUG_LOG("Current bar set to: ");
-    ETHERNET_DEBUG_LOGLN(current_bar);  
+    DEBUG_LOG("Current bar set to: ");
+    DEBUG_LOGLN(current_bar);  
 };
 void Global::setCurrentBeat(int beat){
     current_beat = beat;
-    ETHERNET_DEBUG_LOG("Current beat set to: ");
-    ETHERNET_DEBUG_LOGLN(current_beat);  
+    DEBUG_LOG("Current beat set to: ");
+    DEBUG_LOGLN(current_beat);  
     globalPage.showCounter();
 };
 void Global::setSigNumerator(int numerator){
     sig_numerator = numerator;
-    ETHERNET_DEBUG_LOG("Signature numerator set to: ");
-    ETHERNET_DEBUG_LOGLN(sig_numerator);  
+    DEBUG_LOG("Signature numerator set to: ");
+    DEBUG_LOGLN(sig_numerator);  
 };
 void Global::setSigDenominator(int denominator){
     sig_denominator = denominator;
-    ETHERNET_DEBUG_LOG("Signature denominator set to: ");
-    ETHERNET_DEBUG_LOGLN(sig_denominator);
+    DEBUG_LOG("Signature denominator set to: ");
+    DEBUG_LOGLN(sig_denominator);
 };
 void Global::setTempo(int newTempo){
     tempo = newTempo;
     snprintf(tempoStr, sizeof(tempoStr), "%d", tempo);
     globalPage.showTempo();
-    ETHERNET_DEBUG_LOG("Tempo set to: ");
-    ETHERNET_DEBUG_LOGLN(tempoStr);
+    DEBUG_LOG("Tempo set to: ");
+    DEBUG_LOGLN(tempoStr);
 };
 void Global::setIsPlaying(bool playing){
     isPlaying = playing;
     if (playing) {
-        ETHERNET_DEBUG_LOGLN("Playback started");
+        DEBUG_LOGLN("Playback started");
     } else {
-        ETHERNET_DEBUG_LOGLN("Playback stopped");
+        DEBUG_LOGLN("Playback stopped");
     }  
     if(activePage == pages[0]){
         if (global.isPlaying) l[1].show_green();

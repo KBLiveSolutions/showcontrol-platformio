@@ -31,7 +31,7 @@ void sendOSCAblesetSubscribe() {
   oscMessage.add(get_uuid());
   for (int i = 0; i < ethernet.totalServiceCount; i++) {
     if (ethernet.discoveredServices[i].serviceType == ABLESETSRV) {
-      ETHERNET_DEBUG_LOGLN("Send Ableset Subscribe");
+      DEBUG_LOGLN("Send Ableset Subscribe");
       showcontrolUdp.beginPacket(ethernet.discoveredServices[i].ip, ethernet.discoveredServices[i].port);
       oscMessage.send(showcontrolUdp);
       showcontrolUdp.endPacket();

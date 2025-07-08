@@ -16,15 +16,17 @@ void Led::begin() {
 }
 
 void Led::set_default() {
-  r = init_led_color_red[ledNumber];
-  g = init_led_color_green[ledNumber];
-  b = init_led_color_blue[ledNumber];
+  RGBColor initColor = LedConfig::getInitColor(ledNumber);
+  r = initColor.r;
+  g = initColor.g;
+  b = initColor.b;
 }
 
 void Led::setColor(uint8_t color, uint8_t channel) {
-  r = colorIndex[color][0];
-  g = colorIndex[color][1];
-  b = colorIndex[color][2];
+  RGBColor paletteColor = LedConfig::getPaletteColor(color);
+  r = paletteColor.r;
+  g = paletteColor.g;
+  b = paletteColor.b;
   // led_channel[current_layout] = channel;
   if (color == 0) {
     // r = 0;
@@ -47,10 +49,22 @@ void Led::setInitColor() {
 
 void Led::showPixel(uint8_t r, uint8_t g, uint8_t b) {
   for(int j=0; j < 5; j++){
-    int index = leds_array[ledNumber][j];
-    if(index > -1) pixels[index] = CRGB(int(r * settings.ledBrightness / 10), int(g * settings.ledBrightness / 10), int(b * settings.ledBrightness / 10));
-    // if(index > -1) pixels.setPixelColor(index, int(r * settings.ledBrightness / 100), int(g * settings.ledBrightness / 100), int(b * settings.ledBrightness / 100), true);
-     FastLED.show();
+    LedRow ledRow = LedConfig::getLedRow(ledNumber);
+    int8_t index = ledRow.getLed(j);
+    if(index > -1) {
+      // Appliquer d'abord la luminosité, puis la correction gamma
+      uint8_t adjustedR = r * settings.ledBrightness / 10;
+      uint8_t adjustedG = g * settings.ledBrightness / 10;
+      uint8_t adjustedB = b * settings.ledBrightness / 10;
+      
+      // Appliquer la correction gamma pour un rendu plus naturel
+      // RGBColor gammaCorrected = LedUtils::gammaCorrectColor(RGBColor(adjustedR, adjustedG, adjustedB));
+      
+      // pixels[index] = CRGB(gammaCorrected.r, gammaCorrected.g, gammaCorrected.b);
+      pixels[index] = CRGB(adjustedR, adjustedG, adjustedB);
+
+    }
+    FastLED.show();
   }
 }
 
@@ -72,7 +86,7 @@ void Led::show_green() {
 }
 
 void Led::show_lightGreen() {
-  showPixel(0, 120, 10);
+  showPixel(0, 80, 5);
 }
 
 void Led::show_white() {
@@ -101,6 +115,7 @@ void leds::setup() {
   }
   FastLED.addLeds<NEOPIXEL, LED_PIN>(pixels, NUMPIXELS); 
   Serial.println("Setup LEDs done");
+    FastLED.show();
 }
 
 void leds::clearLeds() {

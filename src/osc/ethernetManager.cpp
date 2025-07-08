@@ -12,8 +12,7 @@
 EthernetUDP showcontrolUdp;
 EthernetManager ethernet;
 
-bool ethernetDebug = false;
-bool oscDebug = false;
+char packetBuffer[UDP_TX_PACKET_MAX_SIZE];
 
 IPAddress     localIP(192, 168, 2, 10);
 IPAddress     manualIP(192, 168, 2, 10);
@@ -26,13 +25,154 @@ int32_t       showcontrolLocalPort = jsonManager.getPort();
 int32_t       showcontrolAppInPort = 40051;
 int32_t       ablesetInPort = 39050;
 
+
+bool EthernetManager::dequeuePacket(UDPPacket& packet) {
+  if (queueCount == 0) {
+    return false;
+  }
+  
+  if (queueTail >= UDP_QUEUE_SIZE) {
+    queueTail = 0;
+    queueCount = 0;
+    return false;
+  }
+  
+  // COPIE RAPIDE
+  memcpy(packet.data, udpQueue[queueTail].data, udpQueue[queueTail].size);
+  packet.size = udpQueue[queueTail].size;
+  
+  queueTail = (queueTail + 1) % UDP_QUEUE_SIZE;
+  queueCount--;
+  
+  return true;
+}
+
+bool EthernetManager::enqueuePacket(const char* data, uint16_t size) {
+  if (queueCount >= UDP_QUEUE_SIZE || data == nullptr || size == 0 || size > 75) {
+    return false;
+  }
+  
+  if (queueHead >= UDP_QUEUE_SIZE) {
+    queueHead = 0;
+    queueCount = 0;
+    return false;
+  }
+  
+  // COPIE RAPIDE
+  memcpy(udpQueue[queueHead].data, data, size);
+  udpQueue[queueHead].size = size;
+  
+  queueHead = (queueHead + 1) % UDP_QUEUE_SIZE;
+  queueCount++;
+  
+  return true;
+}
+
+void EthernetManager::read() {
+  // PROTECTION simple contre la réentrance
+  if (processingUDP) {
+    return;
+  }
+  processingUDP = true;
+  
+  // PHASE 1 : Réception RAPIDE - Mettre tous les paquets en queue
+  int packetsReceived = 0;
+  const int MAX_RECEIVE_PER_LOOP = 25;  // Plus de paquets
+  
+  while (packetsReceived < MAX_RECEIVE_PER_LOOP) {
+    showcontrolPacketSize = showcontrolUdp.parsePacket();
+    
+    if (showcontrolPacketSize > 0 && totalServiceCount > 0) {
+      // PROTECTION : Rejeter les paquets trop grands
+      if (showcontrolPacketSize > 75) {
+        showcontrolUdp.flush();
+        packetsReceived++;
+        continue;
+      }
+      
+      // PROTECTION : Queue presque pleine
+      if (queueCount >= UDP_QUEUE_SIZE - 1) {
+        showcontrolUdp.flush();
+        break;
+      }
+      
+      // Buffer temporaire
+      char tempBuffer[80];
+      int bytesRead = showcontrolUdp.read(tempBuffer, showcontrolPacketSize);
+      
+      if (bytesRead == showcontrolPacketSize && bytesRead > 0) {
+        if (enqueuePacket(tempBuffer, bytesRead)) {
+          packetsReceived++;
+        } else {
+          break;
+        }
+      } else {
+        showcontrolUdp.flush();
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+  
+  // PHASE 2 : Traitement OSC RAPIDE - Traiter PLUSIEURS messages par boucle
+  const unsigned long OSC_BUDGET_MS = settings.isRunning ? 35 : 10;  // Budget généreux
+  const int MAX_PROCESS_PER_LOOP = settings.isRunning ? 32 : 16;     // Traiter beaucoup de messages
+  unsigned long oscProcessingStart = millis();
+  int packetsProcessed = 0;
+  
+  UDPPacket packet;
+  while (packetsProcessed < MAX_PROCESS_PER_LOOP && 
+         (millis() - oscProcessingStart) < OSC_BUDGET_MS &&
+         dequeuePacket(packet)) {
+    
+    // TRAITEMENT DIRECT sans validation
+    if (packet.size > 0 && packet.size <= 75) {
+      receiveOSCMsg(packet.data, packet.size);
+    }
+    packetsProcessed++;
+  }
+  
+  // DIAGNOSTIC minimal
+  if (debugOn && (packetsReceived > 10 || packetsProcessed > 10)) {
+    DEBUG_LOG("R:");
+    DEBUG_LOG(packetsReceived);
+    DEBUG_LOG(" P:");
+    DEBUG_LOG(packetsProcessed);
+    DEBUG_LOG(" Q:");
+    DEBUG_LOG(queueCount);
+    DEBUG_LOG("/");
+    DEBUG_LOGLN(UDP_QUEUE_SIZE);
+  }
+  
+  // Service discovery seulement si queue pas trop pleine
+  if (!settings.isRunning && queueCount < UDP_QUEUE_SIZE / 2) {
+    EthernetBonjour.run();
+  }
+  
+  // Maintenance réseau moins fréquente
+  static unsigned long lastNetworkCheck = 0;
+  unsigned long currentMillis = millis();
+  if (currentMillis - lastNetworkCheck >= 750) {  // 750ms au lieu de 500ms
+    lastNetworkCheck = currentMillis;
+    if (Ethernet.linkStatus() != LinkOFF) {
+      checkEthernetConnection();
+      if (activePage == SPLASH_PAGE) showLookingForServer();
+    } else {
+      globalPage.showEthSprite(settings.MIDIConnected, -1);
+    }
+  }
+  
+  processingUDP = false;
+}
+
 // Par exemple :
 int EthernetManager::getServiceTypeIndex(ServiceType type) {
   return (type == ABLESETSRV) ? 0 : 1;
 }
 
 bool EthernetManager::isServiceKnown(ServiceType type, const IPAddress& ip, uint16_t port) {
-  ETHERNET_DEBUG_LOG("====>>> Service ");
+  DEBUG_LOG("====>>> Service ");
   const unsigned long currentTime = millis(); // const pour optimisation
   
   for (int i = 0; i < totalServiceCount; i++) {
@@ -40,12 +180,12 @@ bool EthernetManager::isServiceKnown(ServiceType type, const IPAddress& ip, uint
         discoveredServices[i].ip == ip &&
         discoveredServices[i].port == port) {
       discoveredServices[i].lastSeen = currentTime;
-      ETHERNET_DEBUG_LOGLN("Known");
+      DEBUG_LOGLN("Known");
       if(activePage == SPLASH_PAGE) settings.getItStarted();
       return true;
     }
   }
-  ETHERNET_DEBUG_LOGLN("NOT Known");
+  DEBUG_LOGLN("NOT Known");
   return false;
 }
 
@@ -64,12 +204,12 @@ void EthernetManager::addService(ServiceType type, const IPAddress& ip, uint16_t
     totalServiceCount++;
 
     if (type == ABLESETSRV) {
-      ETHERNET_DEBUG_LOG_VALUE("====>>> Ableset  connected port : ", port);
+      DEBUG_LOG_VALUE("====>>> Ableset  connected port : ", port);
       // showSpriteHPadding("Ableset connected", defaultTxtColor, ethernetStatusSprite, -228);
       sendOSCAblesetSubscribe();
     } 
     else {
-      ETHERNET_DEBUG_LOG_VALUE("====>>> ShowControl connected port : ", port);
+      DEBUG_LOG_VALUE("====>>> ShowControl connected port : ", port);
       // showSpriteHPadding("ShowControl connected", defaultTxtColor, ethernetStatusSprite, -228);
       sendOSCShowControl("/showcontrol/getValues");
     }
@@ -80,7 +220,7 @@ void EthernetManager::addService(ServiceType type, const IPAddress& ip, uint16_t
 
 // Function to handle new service discovery
 void EthernetManager::initServer(ServiceType type, const IPAddress& ip, uint16_t port) {
-    ETHERNET_DEBUG_LOG("New service discovered (");
+    DEBUG_LOG("New service discovered (");
   if (!isServiceKnown(type, ip, port)) {
     addService(type, ip, port);
   }
@@ -102,12 +242,10 @@ void EthernetManager::checkForDisconnectedServices() {
   unsigned long currentMillis = millis();
   for (int i = 0; i < totalServiceCount; i++) {
     if (currentMillis - discoveredServices[i].lastSeen > 10000) {
-      if(ethernetDebug) {
-        ETHERNET_DEBUG_LOG("Service disconnected: ");
-        ETHERNET_DEBUG_LOG(discoveredServices[i].ip);
-        ETHERNET_DEBUG_LOG(":");
-        ETHERNET_DEBUG_LOGLN(discoveredServices[i].port);
-      }
+      DEBUG_LOG("Service disconnected: ");
+      DEBUG_LOG(discoveredServices[i].ip);
+      DEBUG_LOG(":");
+      DEBUG_LOGLN(discoveredServices[i].port);
 
       removeService(i, discoveredServices[i].serviceType);
       i--; // Adjust index after removal
@@ -127,13 +265,13 @@ void EthernetManager::updateLastSeen(ServiceType type, IPAddress remoteIP) {
 }
 
 void EthernetManager::showIP(int *ip) {
-  ETHERNET_DEBUG_LOGLN("Printing ip ");
+  DEBUG_LOGLN("Printing ip ");
   static char buf[16];
   sprintf(buf, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
   if(activePage == SPLASH_PAGE) splashPage.showSplashSub1Sprite(buf, defaultTxtColor);
   globalPage.showEthSprite(settings.MIDIConnected, 0);
-  ETHERNET_DEBUG_LOGLN(buf);
-  ETHERNET_DEBUG_LOGLN("IP printed");
+  DEBUG_LOGLN(buf);
+  DEBUG_LOGLN("IP printed");
 }
 
 void EthernetManager::setIp(int *ip) {
@@ -150,7 +288,7 @@ void EthernetManager::setPort(int32_t port) {
 }
 
 void EthernetManager::setDHCP(int data){
-  ETHERNET_DEBUG_LOG_VALUE("DHCP: ", data);
+  DEBUG_LOG_VALUE("DHCP: ", data);
   useDHCP = data;
   jsonManager.writeOption("useDHCP", data);
 }
@@ -203,22 +341,22 @@ IPAddress manualIP(jsonManager.getIPNum(0), jsonManager.getIPNum(1), jsonManager
   globalPage.showEthSprite(settings.MIDIConnected, -1);
   Ethernet.init(17); 
   if (Ethernet.linkStatus() == LinkOFF) {
-    ETHERNET_DEBUG_LOGLN("LinkOff");
+    DEBUG_LOGLN("LinkOff");
   } 
   else {
-    ETHERNET_DEBUG_LOGLN("Link ON");
+    DEBUG_LOGLN("Link ON");
     if(useDHCP) {
-      ETHERNET_DEBUG_LOGLN("Start DHCP");
+      DEBUG_LOGLN("Start DHCP");
       if (Ethernet.begin(mac) == 0) {
-        ETHERNET_DEBUG_LOGLN("DHCP Failed");
+        DEBUG_LOGLN("DHCP Failed");
         Ethernet.begin(mac, manualIP, myDns, gateway, subnet);
       }
       else {
-        ETHERNET_DEBUG_LOGLN("DHCP Success");
+        DEBUG_LOGLN("DHCP Success");
       }
     }
     else {
-      ETHERNET_DEBUG_LOGLN("Manual IP");
+      DEBUG_LOGLN("Manual IP");
       Ethernet.setLocalIP(manualIP);
       Ethernet.begin(mac, manualIP, myDns, gateway, subnet);
     }
@@ -226,10 +364,10 @@ IPAddress manualIP(jsonManager.getIPNum(0), jsonManager.getIPNum(1), jsonManager
     int buf[4] = {localIP[0], localIP[1], localIP[2], localIP[3]};
     // showcontrolUdp.begin(showcontrolLocalPort);
     if (showcontrolUdp.begin(showcontrolLocalPort)) {
-  ETHERNET_DEBUG_LOG("UDP started successfully on port : ");
-  ETHERNET_DEBUG_LOGLN(showcontrolLocalPort);
+  DEBUG_LOG("UDP started successfully on port : ");
+  DEBUG_LOGLN(showcontrolLocalPort);
 } else {
-  ETHERNET_DEBUG_LOGLN("UDP start failed");
+  DEBUG_LOGLN("UDP start failed");
 }
     setupEthernetDone = true;
     showIP(buf);
@@ -255,46 +393,10 @@ void EthernetManager::checkEthernetConnection(){
     }
   } 
   else {
-    ETHERNET_DEBUG_LOGLN("LinkOff");
+    DEBUG_LOGLN("LinkOff");
       // showSprite("Link Off", defaultTxtColor, sub2Sprite);
       setupEthernetDone = false;  // Flag the setup to rerun when cable is connected
   }
-}
-
-void EthernetManager::read() {
-  EthernetBonjour.run();
-  unsigned long currentMillis = millis();
-  // if (currentMillis - lastCheckTime >= 2000) {
-  //   lastCheckTime = currentMillis;
-  //   checkForDisconnectedServices();
-  //   pingServices();
-  // }
-  showcontrolPacketSize = showcontrolUdp.parsePacket();
-
-  if (totalServiceCount > 0 && showcontrolPacketSize) {
-    if(ethernetDebug){
-      ETHERNET_DEBUG_LOG("Message received from: ");
-      ETHERNET_DEBUG_LOG(showcontrolUdp.remoteIP());
-      ETHERNET_DEBUG_LOG(" : ");
-      ETHERNET_DEBUG_LOG(showcontrolUdp.remotePort());
-      ETHERNET_DEBUG_LOG(" to: ");
-      ETHERNET_DEBUG_LOG(manualIP);
-      ETHERNET_DEBUG_LOG(" port: ");
-      ETHERNET_DEBUG_LOGLN(showcontrolLocalPort);
-    }
-    receiveOSCMsg();
-  } 
-  
-  if(Ethernet.linkStatus() != LinkOFF){
-    static unsigned long lastCheckTime = 0;
-    unsigned long currentMillis = millis();
-    if(currentMillis - lastCheckTime >= 500) {
-      lastCheckTime = currentMillis;
-      checkEthernetConnection();
-      if(activePage == SPLASH_PAGE) showLookingForServer();
-    }
-  }
-    else globalPage.showEthSprite(settings.MIDIConnected, -1);
 }
 
 void serviceFoundCallback(const char* type, MDNSServiceProtocol /*proto*/, const char* name, const uint8_t ipAddr[4], unsigned short port, const char* txtContent)
@@ -308,12 +410,12 @@ void serviceFoundCallback(const char* type, MDNSServiceProtocol /*proto*/, const
   } 
   else {
     IPAddress ip(ipAddr[0], ipAddr[1], ipAddr[2], ipAddr[3]);
-    ETHERNET_DEBUG_LOG("Service found: ");
-    ETHERNET_DEBUG_LOG(name);
-    ETHERNET_DEBUG_LOG(" at IP: ");
-    ETHERNET_DEBUG_LOG(ip);
-    ETHERNET_DEBUG_LOG(" on port: ");
-    ETHERNET_DEBUG_LOG(port); 
+    DEBUG_LOG("Service found: ");
+    DEBUG_LOG(name);
+    DEBUG_LOG(" at IP: ");
+    DEBUG_LOG(ip);
+    DEBUG_LOG(" on port: ");
+    DEBUG_LOG(port); 
     if(port > 100 && ipAddr[0] == localIP[0] && ipAddr[1] == localIP[1] && ipAddr[2] == localIP[2]){
       // Vérification directe du nom du service
       if(strcmp(name, "showcontrol") == 0) {
@@ -325,10 +427,10 @@ void serviceFoundCallback(const char* type, MDNSServiceProtocol /*proto*/, const
         char len = *txtContent++; 
         int i=0;
         const char ablesetString[] = "server=ableset";  // const pour optimisation
-        ETHERNET_DEBUG_LOG("txtContent: ");
-        ETHERNET_DEBUG_LOG(txtContent);
-        ETHERNET_DEBUG_LOG(" len: ");
-        ETHERNET_DEBUG_LOGLN(len);
+        DEBUG_LOG("txtContent: ");
+        DEBUG_LOG(txtContent);
+        DEBUG_LOG(" len: ");
+        DEBUG_LOGLN(len);
         while (len) {
           i = 0;
           while (len--)

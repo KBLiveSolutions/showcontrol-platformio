@@ -3,7 +3,7 @@
 #include "LittleFS.h"
 #include <ArduinoJson.h>
 // #include "../core/pages.h"
-#include "../config/consts.h"
+#include "consts.h"
 #include "../core/settingsParser.h"
 #include "../core/mainPageParser.h"
 #include "../core/globalParser.h"

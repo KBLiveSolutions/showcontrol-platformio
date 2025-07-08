@@ -3,6 +3,7 @@
 #include "../core/settingsParser.h"
 #include "../core/globalParser.h"
 #include "../display/colors.h"
+#include "../core/utils.h"
 
 
 // ACTIVE SONG
@@ -16,8 +17,8 @@ void onActiveSongName(OSCMessage &msg, int addrOffset) {
 void onActiveSongColor(OSCMessage &msg, int addrOffset) {
   char strBuf[32];
   msg.getString(0, strBuf, 32);
-  // ETHERNET_DEBUG_LOG("onActiveSongColor OSC : ");
-  // ETHERNET_DEBUG_LOGLN(strBuf);
+  // DEBUG_LOG("onActiveSongColor OSC : ");
+  // DEBUG_LOGLN(strBuf);
   msg.getString(1, strBuf, 32);
   _main.setActiveSongColor(hexStringtoRGB565(strBuf));
 }
@@ -44,6 +45,7 @@ void onActiveSongProgress(OSCMessage &msg, int addrOffset){
 
 void onRemainingTimeInSet(OSCMessage &msg, int addrOffset) {
     _main.setRemainingTimeInSet(msg.getFloat(0));
+    settings.isRunning = false;
 }
 
 void onRemainingTimeInSong(OSCMessage &msg, int addrOffset) {
@@ -74,8 +76,8 @@ void onActiveSectionName(OSCMessage &msg, int addrOffset) {
 
 void onActiveSectionIndex(OSCMessage &msg, int addrOffset) {
   // activeSectionIndex = (int) msg.getFloat(0);
-  // ETHERNET_DEBUG_LOG(F("activeSectionIndex changed: "));
-  // ETHERNET_DEBUG_LOGLN(activeSectionIndex);
+  // DEBUG_LOG(F("activeSectionIndex changed: "));
+  // DEBUG_LOGLN(activeSectionIndex);
   // // showSprite(_main.sections[activeSectionIndex], defaultTxtColor, sub1Sprite);    
   // int count = 0;
   //   for (int i = 0; i < MAX_SECTIONS; i++) {
@@ -93,14 +95,14 @@ void onActiveSectionIndex(OSCMessage &msg, int addrOffset) {
 void onActiveSectionStart(OSCMessage &msg, int addrOffset) {
   // _main.activeSectionStart = msg.getFloat(0);
   // _main.activeSectionEnd = 0;
-  // ETHERNET_DEBUG_LOG("onActiveSectionStart: ");
-  // ETHERNET_DEBUG_LOGLN(_main.activeSectionStart);
+  // DEBUG_LOG("onActiveSectionStart: ");
+  // DEBUG_LOGLN(_main.activeSectionStart);
 }
 
 void onActiveSectionEnd(OSCMessage &msg, int addrOffset) {
   // _main.activeSectionEnd = msg.getFloat(0);
-  // ETHERNET_DEBUG_LOG("_main.activeSectionEnd: ");
-  // ETHERNET_DEBUG_LOGLN(_main.activeSectionEnd);
+  // DEBUG_LOG("_main.activeSectionEnd: ");
+  // DEBUG_LOGLN(_main.activeSectionEnd);
 }
 
 void onActiveSectionColor(OSCMessage &msg, int addrOffset) {
@@ -121,17 +123,17 @@ void onSetlistName(OSCMessage &msg, int addrOffset) {
 
 
 void onBeatsPosition(OSCMessage &msg, int addrOffset) {
-  // ETHERNET_DEBUG_LOG("global.beatsPosition: ");
-  // ETHERNET_DEBUG_LOGLN(global.beatsPosition);
+  // DEBUG_LOG("global.beatsPosition: ");
+  // DEBUG_LOGLN(global.beatsPosition);
   global.beatsPosition = msg.getFloat(0);
   global.current_bar = int(global.beatsPosition / 4) + 1;
   global.current_beat = (int)global.beatsPosition % 4 + 1;
   global.setCurrentBar(global.current_bar);
   global.setCurrentBeat(global.current_beat);
-  // ETHERNET_DEBUG_LOG("global.current_bar: ");
-  // ETHERNET_DEBUG_LOG(global.current_bar);
-  // ETHERNET_DEBUG_LOG(" | global.current_beat: ");
-  // ETHERNET_DEBUG_LOGLN(global.current_beat);
+  // DEBUG_LOG("global.current_bar: ");
+  // DEBUG_LOG(global.current_bar);
+  // DEBUG_LOG(" | global.current_beat: ");
+  // DEBUG_LOGLN(global.current_beat);
   // globalPage.showCounter();
   // updateProgressBar();
   // showProgressBarMillis = millis();
@@ -139,10 +141,7 @@ void onBeatsPosition(OSCMessage &msg, int addrOffset) {
 }
 
 void onIsPlaying(OSCMessage &msg, int addrOffset) {
-  global.isPlaying = msg.getInt(0);
-  ETHERNET_DEBUG_LOG("global.isPlaying: ");
-  ETHERNET_DEBUG_LOGLN(global.isPlaying);
-  global.setIsPlaying(global.isPlaying);
+  global.setIsPlaying( msg.getInt(0));
 }
 
 void onAudioInterfaceScene(OSCMessage &msg, int addrOffset) {
@@ -151,9 +150,8 @@ void onAudioInterfaceScene(OSCMessage &msg, int addrOffset) {
 }
 
 void onLoopEnabled(OSCMessage &msg, int addrOffset) {
-  // ETHERNET_DEBUG_LOG("global.loopEnabled ");
-  // global.loopEnabled = msg.getInt(0);
-  // ETHERNET_DEBUG_LOG(global.loopEnabled);
+  // DEBUG_LOG("global.loopEnabled ");
+  global.setLoopEnabled(msg.getInt(0));
   // if(activePage == pages[0]){
   // if (global.loopEnabled > 0) l[5].show_direct_color(255, 100, 0);
   // else l[5].led_off();
@@ -161,16 +159,16 @@ void onLoopEnabled(OSCMessage &msg, int addrOffset) {
 }
 
 void onLoopStart(OSCMessage &msg, int addrOffset) {
-  // ETHERNET_DEBUG_LOG("onLoopStart ");
+  // DEBUG_LOG("onLoopStart ");
   // global.loopStart = msg.getFloat(0);
-  // ETHERNET_DEBUG_LOG(global.loopEnabled);
+  // DEBUG_LOG(global.loopEnabled);
   // // showActiveSongProgressBar();
 }
 
 void onLoopEnd(OSCMessage &msg, int addrOffset) {
-  // ETHERNET_DEBUG_LOG("global.loopEnabled ");
+  // DEBUG_LOG("global.loopEnabled ");
   // global.loopEnd = msg.getFloat(0);
-  // ETHERNET_DEBUG_LOG(global.loopEnabled);
+  // DEBUG_LOG(global.loopEnabled);
   // // showActiveSongProgressBar();
 }
 
@@ -188,43 +186,43 @@ void onSignature(OSCMessage &msg, int addrOffset) {
 // SETLIST
 
 void onSections(OSCMessage &msg, int addrOffset) {
-  // int size = msg.size();
-  // ETHERNET_DEBUG_LOG("onSections size: ");
-  // ETHERNET_DEBUG_LOGLN(size);
-  // for (int j = 0; j < size; j++) {
-  //   char strBuf[MAX_SONG_NAME];
-  //   msg.getString(j, strBuf, MAX_SONG_NAME);
-  //   strcpy(_main.sections[j], strBuf);
-  //   ETHERNET_DEBUG_LOG("_main.sections: ");
-  //   ETHERNET_DEBUG_LOGLN(_main.sections[j]);
-  // }
+  int size = msg.size();
+  DEBUG_LOG("onSections size: ");
+  DEBUG_LOGLN(size);
+  for (int j = 0; j < size; j++) {
+    char strBuf[MAX_SONG_NAME];
+    msg.getString(j, strBuf, MAX_SONG_NAME);
+    strcpy(_main.sections[j], strBuf);
+    DEBUG_LOG("_main.sections: ");
+    DEBUG_LOGLN(_main.sections[j]);
+  }
 }
 
 void onSongs(OSCMessage &msg, int addrOffset) {
-  // int size = msg.size();
-  // ETHERNET_DEBUG_LOG("songs size: ");
-  // ETHERNET_DEBUG_LOGLN(size);
-  // _main. songsListSize = size;
-  // for (int j = 0; j < size; j++) {
-  //   char strBuf[MAX_SONG_NAME];
-  //   msg.getString(j, strBuf, MAX_SONG_NAME);
-  //   for (int i = 0; i < MAX_SONG_NAME; i++) {
-  //     _main.songsList[j][i] = strBuf[i];
-  //   }
-  //   ETHERNET_DEBUG_LOG("songs: ");
-  //   ETHERNET_DEBUG_LOGLN(_main.songsList[j]);
-  // }
+  int size = msg.size();
+  DEBUG_LOG("songs size: ");
+  DEBUG_LOGLN(size);
+  _main. songsListSize = size;
+  for (int j = 0; j < size; j++) {
+    char strBuf[MAX_SONG_NAME];
+    msg.getString(j, strBuf, MAX_SONG_NAME);
+    for (int i = 0; i < MAX_SONG_NAME; i++) {
+      _main.songsList[j][i] = strBuf[i];
+    }
+    DEBUG_LOG("songs: ");
+    DEBUG_LOGLN(_main.songsList[j]);
+  }
   // mainPage.showSongsCounter();
 }
 
 void onSongDurations(OSCMessage &msg, int addrOffset) {
   // int size = msg.size();
-  // ETHERNET_DEBUG_LOG("songs durations: ");
-  // ETHERNET_DEBUG_LOGLN(size);
+  // DEBUG_LOG("songs durations: ");
+  // DEBUG_LOGLN(size);
   // for (int j = 0; j < size; j++) {
   //   _main.songDurations[j] = msg.getInt(j);
-  //   ETHERNET_DEBUG_LOG("durations: ");
-  //   ETHERNET_DEBUG_LOGLN(_main.songDurations[j]);
+  //   DEBUG_LOG("durations: ");
+  //   DEBUG_LOGLN(_main.songDurations[j]);
   // }
 }
 
@@ -232,8 +230,8 @@ void onSongDurations(OSCMessage &msg, int addrOffset) {
 
 void onSongColors(OSCMessage &msg, int addrOffset) {
   // int size = msg.size();
-  // ETHERNET_DEBUG_LOG("colors size: ");
-  // ETHERNET_DEBUG_LOGLN(size);
+  // DEBUG_LOG("colors size: ");
+  // DEBUG_LOGLN(size);
   // // for (int j = 0; j < size; j++) {
   // //   char strBuf[MAX_SONG_NAME];
   // //   msg.getString(j*2, strBuf, MAX_SONG_NAME);
@@ -246,8 +244,8 @@ void onSongColors(OSCMessage &msg, int addrOffset) {
   // // // activeSongColorShade = hexStringtoRGB565Shade(strBuf);
   // // // activeSectionColor = activeSongColorShade;
   // //   // }
-  // //   ETHERNET_DEBUG_LOG("colors: ");
-  // //   ETHERNET_DEBUG_LOGLN(songColors[j]);
+  // //   DEBUG_LOG("colors: ");
+  // //   DEBUG_LOGLN(songColors[j]);
   // // }
   // // showSongs();
 }
@@ -263,39 +261,47 @@ void onSubscribed(OSCMessage &msg, int addrOffset) {
       }
     }
   settings.getItStarted();
-  ETHERNET_DEBUG_LOGLN("Subscribed to Ableset");
+  DEBUG_LOGLN("Subscribed to Ableset");
   // char strBuf[32];
-  // ETHERNET_DEBUG_LOGLN(msg.getString(0, strBuf, 32));
+  // DEBUG_LOGLN(msg.getString(0, strBuf, 32));
 }
 
 void onHeartbeat(OSCMessage &msg, int addrOffset) {    
-  ETHERNET_DEBUG_LOGLN("Heartbeat received");
-  for (int i = 0; i < ethernet.totalServiceCount; i++) { // Iterate through all discovered services
-      if (ethernet.discoveredServices[i].serviceType == ABLESETSRV && 
-          ethernet.discoveredServices[i].ip == showcontrolUdp.remoteIP()) {
-        ethernet.discoveredServices[i].lastSeen = millis();
-        if(!ethernet.discoveredServices[i].subscribed){
-          ETHERNET_DEBUG_LOGLN("Service already subscribed, updating last seen");
-            ethernet.discoveredServices[i].subscribed = true; // Mark the service as subscribed
-          settings.getItStarted(); // Trigger the handshake response to update the UI
+    DEBUG_LOG("Heartbeat received: ");
+    DEBUG_LOGLN(settings.isRunning);
+  if (!settings.isRunning){  
+    bool serviceFound = false;
+  
+    for (int i = 0; i < ethernet.totalServiceCount; i++) { // Iterate through all discovered services
+        if (ethernet.discoveredServices[i].serviceType == ABLESETSRV && 
+            ethernet.discoveredServices[i].ip == showcontrolUdp.remoteIP()) {
+          ethernet.discoveredServices[i].lastSeen = millis();
+          if(!ethernet.discoveredServices[i].subscribed){
+            DEBUG_LOGLN("Service already subscribed, updating last seen");
+              ethernet.discoveredServices[i].subscribed = true; // Mark the service as subscribed
+            settings.getItStarted(); // Trigger the handshake response to update the UI
+          }
+          serviceFound = true;
+          break; // Exit the loop early since IPs are unique
         }
-        break; // Exit the loop early since IPs are unique
-      }
-      else{
-        ETHERNET_DEBUG_LOG("Service not found, adding service: ");
-        ETHERNET_DEBUG_LOGLN(showcontrolUdp.remoteIP());
-        ethernet.addService(ABLESETSRV, showcontrolUdp.remoteIP(), showcontrolUdp.remotePort());
-        settings.getItStarted();
-      }
     }
+    if (!serviceFound) {
+      DEBUG_LOG("Service not found, adding service: ");
+      DEBUG_LOGLN(showcontrolUdp.remoteIP());
+      ethernet.addService(ABLESETSRV, showcontrolUdp.remoteIP(), showcontrolUdp.remotePort());
+      settings.getItStarted();
+    }
+  }
+  // else sendOSCAbleset("/getValues");
+
 }
 
 void onError(OSCMessage &msg, int addrOffset) {
-  ETHERNET_DEBUG_LOGLN(msg.getType(0));
+  DEBUG_LOGLN(msg.getType(0));
 }
 
 void onLivePing(OSCMessage &msg, int addrOffset) {
-  // ETHERNET_DEBUG_LOGLN(("Live Ping Received"));
+  // DEBUG_LOGLN(("Live Ping Received"));
   // sendOSCShowControl("/showcontrol/ping");  
   // for (int i = 0; i < ethernet.totalServiceCount; i++) { // Iterate through all discovered services
   //     if (ethernet.discoveredServices[i].serviceType == SHOWCONTROLSRV && 
@@ -307,7 +313,7 @@ void onLivePing(OSCMessage &msg, int addrOffset) {
 }
 
 void onSCPong(OSCMessage &msg, int addrOffset) {
-  // ETHERNET_DEBUG_LOGLN(("App Ping Received"));
+  // DEBUG_LOGLN(("App Ping Received"));
   //   for (int i = 0; i < ethernet.totalServiceCount; i++) { // Iterate through all discovered services
   //     if (ethernet.discoveredServices[i].serviceType == SHOWCONTROLSRV && 
   //         ethernet.discoveredServices[i].ip == showcontrolUdp.remoteIP()) {
@@ -318,16 +324,16 @@ void onSCPong(OSCMessage &msg, int addrOffset) {
 }
 
 void onMessage(OSCMessage &msg, int addrOffset) {
-  ETHERNET_DEBUG_LOGLN(("OSCMessage"));
+  DEBUG_LOGLN(("OSCMessage"));
 }
 
 void onCCMessage(OSCMessage &msg, int addrOffset) {
-  // ETHERNET_DEBUG_LOG("onCCMessage: ");
-  // ETHERNET_DEBUG_LOG(msg.getInt(0)); //ch
-  // ETHERNET_DEBUG_LOG(" / ");
-  // ETHERNET_DEBUG_LOG(msg.getInt(1)); //control_id
-  // ETHERNET_DEBUG_LOG(" / ");
-  // ETHERNET_DEBUG_LOGLN(msg.getInt(2)); //val
+  // DEBUG_LOG("onCCMessage: ");
+  // DEBUG_LOG(msg.getInt(0)); //ch
+  // DEBUG_LOG(" / ");
+  // DEBUG_LOG(msg.getInt(1)); //control_id
+  // DEBUG_LOG(" / ");
+  // DEBUG_LOGLN(msg.getInt(2)); //val
   // // USER_MODE_1.checkLeds(msg.getInt(0), msg.getInt(1), msg.getInt(2));
   // // activePage.checkLeds(msg.getInt(0), msg.getInt(1), msg.getInt(2));
   // // if (msg.getInt(1) == 117) updateProgressBar( msg.getInt(2));
@@ -348,7 +354,7 @@ void onSerialMessage(OSCMessage &msg, int addrOffset) {
   // char strBuf[MAX_SONG_NAME];
   // msg.getString(0, strBuf, MAX_SONG_NAME);
   // int numPage = msg.getInt(1);
-  // ETHERNET_DEBUG_LOGLN(strBuf);
+  // DEBUG_LOGLN(strBuf);
   // if (strcmp(strBuf, "GET_CONFIG") == 0) jsonManager.sendJSONConfigOSC();
   // else if (strcmp(strBuf, "GET_PAGE") == 0) jsonManager.sendJSONPageOSC(numPage);
 }
@@ -361,97 +367,160 @@ void onDisplayMessage(OSCMessage &msg, int addrOffset) {
 }
 
 void onExMIDI(OSCMessage &msg, int addrOffset) {
-  // ETHERNET_DEBUG_LOG("onExMIDI: ");
-  // ETHERNET_DEBUG_LOG(msg.getInt(0));
-  // ETHERNET_DEBUG_LOG(msg.getInt(1));
-  // ETHERNET_DEBUG_LOGLN(msg.getInt(2));
+  // DEBUG_LOG("onExMIDI: ");
+  // DEBUG_LOG(msg.getInt(0));
+  // DEBUG_LOG(msg.getInt(1));
+  // DEBUG_LOGLN(msg.getInt(2));
   // int32_t packet[4] = {1, msg.getInt(0), msg.getInt(1), msg.getInt(2)};
   // // int32_t data = createUint32FromBytes(packet);
   // // write_to_other_core(data);
 }
 
-void receiveOSCMsg() {
-  // updateLastSeen(SHOWCONTROLSRV, showcontrolUdp.remoteIP());
+void receiveOSCMsg(char* _packetBuffer, int packetSize) {
   OSCMessage msg;
-  while (ethernet. showcontrolPacketSize--) msg.fill(showcontrolUdp.read());
+  
+  // CORRECTION : Utiliser la taille du paquet UDP au lieu de chercher '\0'
+  for (int i = 0; i < packetSize; i++) {
+    msg.fill((uint8_t)_packetBuffer[i]);
+  }
 
   if (!msg.hasError()) {
-    ETHERNET_DEBUG_LOG("OSC Packet Size: ");
-    ETHERNET_DEBUG_LOGLN(ethernet. showcontrolPacketSize);
-    ETHERNET_DEBUG_LOG("OSC Message Received: ");
-    ETHERNET_DEBUG_LOG(msg.getAddress());
-    ETHERNET_DEBUG_LOG(" From: ");
-    ETHERNET_DEBUG_LOG(showcontrolUdp.remoteIP());
-    ETHERNET_DEBUG_LOG(":");
-    ETHERNET_DEBUG_LOGLN(showcontrolUdp.remotePort());
+    String address = msg.getAddress();
+    
+    // DIAGNOSTIC : Détecter les adresses suspectes avec indexOf au lieu de contains
+    if (address.endsWith("$") || address.indexOf("$") >= 0) {
+      DEBUG_LOG("*** TRUNCATED ADDRESS DETECTED: '");
+      DEBUG_LOG(address);
+      DEBUG_LOG("' | Raw packet bytes: ");
+      for (int i = 0; i < min(32, packetSize); i++) {
+        uint8_t byteVal = (uint8_t)_packetBuffer[i];
+        if (byteVal >= 32 && byteVal <= 126) {
+          DEBUG_LOG((char)byteVal);  // Caractère lisible
+        } else {
+          DEBUG_LOG("[");
+          DEBUG_LOG(String(byteVal, HEX));
+          DEBUG_LOG("]");
+        }
+      }
+      DEBUG_LOGLN("");
+      return; // Ignorer les paquets corrompus
+    }
+    
+    DEBUG_LOG("OSC Message Received from: ");
+    DEBUG_LOG(showcontrolUdp.remoteIP());
+    DEBUG_LOG(" / ");
+    DEBUG_LOG(showcontrolUdp.remotePort());
+    DEBUG_LOG(" : ");
+    DEBUG_LOG(msg.getAddress());
+    DEBUG_LOG(" | UDP size: ");
+    DEBUG_LOG(packetSize);
+    DEBUG_LOG(" | OSC size: ");
+    DEBUG_LOGLN(msg.size());
 
-    msg.route("/fromShowcontrolApp/serialMessage", onSerialMessage);
-    msg.route("/fromShowcontrolApp/sysex", onSysexMessage);
-    msg.route("/fromShowcontrolApp/pong", onSCPong);
-    msg.route("/fromLive/selectedSongName", onActiveSongName);
-    msg.route("/fromLive/selectedSectionName", onActiveSectionName);
-    msg.route("/fromLive/nextSongName", onNextSongName);
-    msg.route("/fromLive/control_id", onCCMessage);
-    msg.route("/fromLive/sysex", onSysexMessage);
-    msg.route("/fromLive/displayMessage", onDisplayMessage);
-    // msg.route("/fromLive/display", onDisplayMessage);
-    msg.route("/fromLive/pong", onLivePing);
-    msg.route("/extMIDI", onExMIDI);
+    // Filtrage pendant les séquences critiques
+    if (settings.isRunning) {
+      // Incrémenter le compteur de messages de séquence
+      static int sequenceMessageCount = 0;
+      sequenceMessageCount++;
+      DEBUG_LOG("*** SEQUENCE MSG #");
+      DEBUG_LOG(sequenceMessageCount);
+      DEBUG_LOG(" *** ");
+      DEBUG_LOG(address);
+      DEBUG_LOG(" from ");
+      DEBUG_LOG(showcontrolUdp.remoteIP());
+      DEBUG_LOGLN("");
+      
+      // CORRECTION : Ajouter /heartbeat et /subscribed aux messages critiques
+      bool isCriticalMessage = (address.startsWith("/global/") || 
+                               address.startsWith("/audioInterfaces/") || 
+                               address.startsWith("/setlist/") ||
+                               address.equals("/heartbeat") ||
+                               address.equals("/subscribed"));
+      
+      if (!isCriticalMessage) {
+        DEBUG_LOG("FILTERING: Ignoring non-critical message during sequence: ");
+        DEBUG_LOGLN(address);
+        return;
+      }
+      else {
+        DEBUG_LOG("CRITICAL: Processing essential Ableset message: ");
+        DEBUG_LOGLN(address);
+        
+        // CORRECTION : Supprimer l'appel à trackMessage car la méthode n'existe pas
+        // La séquence se terminera automatiquement avec onRemainingTimeInSet
+      }
+    }
 
-
-    // ABLESET MESSAGES
-
+    // Routes OSC existantes...
     msg.route("/global/beatsPosition", onBeatsPosition);
     msg.route("/global/tempo", onTempo);
     msg.route("/global/isPlaying", onIsPlaying);
+    msg.route("/global/timeSignature", onSignature);
+    msg.route("/global/humanPosition", [](OSCMessage &msg, int addrOffset) {
+      DEBUG_LOGLN("Human position received");
+    });
+    msg.route("/global/isLoadingFile", [](OSCMessage &msg, int addrOffset) {
+      DEBUG_LOGLN("Ableset loading file");
+    });
+    msg.route("/global/isConnected", [](OSCMessage &msg, int addrOffset) {
+      DEBUG_LOGLN("Ableset connected");
+    });
+    msg.route("/global/isRecording", [](OSCMessage &msg, int addrOffset) {
+      DEBUG_LOGLN("Ableset recording state");
+    });
+    msg.route("/global/isSyncingToRemoteTick", [](OSCMessage &msg, int addrOffset) {
+      DEBUG_LOGLN("Ableset sync state");
+    });
+    msg.route("/global/quantization", [](OSCMessage &msg, int addrOffset) {
+      DEBUG_LOGLN("Ableset quantization");
+    });
+    
+    msg.route("/audioInterfaces/connected", [](OSCMessage &msg, int addrOffset) {
+      DEBUG_LOGLN("Audio interfaces connected");
+    });
+    msg.route("/audioInterfaces/count", [](OSCMessage &msg, int addrOffset) {
+      DEBUG_LOGLN("Audio interfaces count");
+    });
+    msg.route("/audioInterfaces/names", [](OSCMessage &msg, int addrOffset) {
+      DEBUG_LOGLN("Audio interfaces names");
+    });
+    msg.route("/audioInterfaces/scenes", [](OSCMessage &msg, int addrOffset) {
+      DEBUG_LOGLN("Audio interfaces scenes");
+    });
+    
     msg.route("/setlist/loopEnabled", onLoopEnabled);
-    msg.route("/subscribed", onSubscribed);
-    // msg.route("/heartbeat", onHeartbeat);
     msg.route("/setlist/name", onSetlistName);
+    msg.route("/setlist/songs", onSongs);
+    msg.route("/setlist/songColors", onSongColors);
+    msg.route("/setlist/songDurations", onSongDurations);
+    msg.route("/setlist/sections", onSections);
+    msg.route("/setlist/sectionColors", [](OSCMessage &msg, int addrOffset) {
+      DEBUG_LOGLN("Section colors received");
+    });
     msg.route("/setlist/activeSongName", onActiveSongName);
     msg.route("/setlist/activeSongColor", onActiveSongColor);
     msg.route("/setlist/activeSongIndex", onActiveSongIndex);
-    msg.route("/setlist/nextSongName", onNextSongName);
-    msg.route("/setlist/songDurations", onSongDurations);
-    msg.route("/setlist/activeSectionName", onActiveSectionName);
-    msg.route("/setlist/activeSectionIndex", onActiveSectionIndex);
-    msg.route("/setlist/songs", onSongs);
-    msg.route("/setlist/sections", onSections);
-    // msg.route("/audioInterfaces/all/scene", onAudioInterfaceScene);
-
-    msg.route("/setlist/remainingTimeInSet", onRemainingTimeInSet);
-    msg.route("/setlist/remainingTimeInSong", onRemainingTimeInSong);
-    msg.route("/setlist/nextSongName", onActiveSongStart);
+    msg.route("/setlist/activeSongStart", onActiveSongStart);
     msg.route("/setlist/activeSongEnd", onActiveSongEnd);
     msg.route("/setlist/activeSongDuration", onActiveSongDuration);
     msg.route("/setlist/activeSongProgress", onActiveSongProgress);
-
-
-
-    // msg.route("/fromLive/nextSongColor", onNextSongColor);
-    // // /setlist/global.loopStart [0|1] the loop's start position in beats
-    // msg.route("/fromLive/global.loopStart", onLoopStart);
-    // // /setlist/global.loopEnd [0|1] the loop's end position in beats
-    // msg.route("/fromLive/global.loopEnd", onLoopEnd);
-    // // /setlist/_main.activeSectionName [string] the name of the current section
-    // msg.route("/fromLive/_main.activeSectionName", onActiveSectionName);
-    // // /setlist/activeSectionIndex [number] the index of the current section in the current song
-    // msg.route("/fromLive/activeSectionIndex", onActiveSectionIndex);
-    // // /setlist/_main.activeSectionStart [number] the section's start position in beats
-    // msg.route("/fromLive/_main.activeSectionStart", onActiveSectionStart);
-    // // /setlist/_main.activeSectionEnd [number] the section's end position in beats
-    // msg.route("/fromLive/_main.activeSectionEnd", onActiveSectionEnd);
-    // // /setlist/activeSectionColor [string] [string] the color of the section, as a color name and as a hex string
-    // msg.route("/fromLive/activeSectionColor", onActiveSectionColor);
-    // // /setlist/_main.sections [...string] a list of all _main.sections of the current song
-    // msg.route("/fromLive/_main.sections", onSections);
-    // // /setlist/songs [...string] a list of all song names in the setlist
-    // msg.route("/fromLive/songs", onSongs);
-    // msg.route("/fromLive/songColors", onSongColors);
-
+    msg.route("/setlist/activeSectionName", onActiveSectionName);
+    msg.route("/setlist/activeSectionIndex", onActiveSectionIndex);
+    msg.route("/setlist/nextSongName", onNextSongName);
+    msg.route("/setlist/nextSectionName", [](OSCMessage &msg, int addrOffset) {
+      DEBUG_LOGLN("Next section name received");
+    });
+    msg.route("/setlist/remainingTimeInSong", onRemainingTimeInSong);
+    msg.route("/setlist/remainingTimeInSet", onRemainingTimeInSet);
+    
+    msg.route("/subscribed", onSubscribed);
+    msg.route("/heartbeat", onHeartbeat);
 
   } else {
-    ETHERNET_DEBUG_LOGLN("Error OSC message");
-    msg.route("/error", onError);
+    DEBUG_LOG("Error OSC message - UDP size: ");
+    DEBUG_LOG(packetSize);
+    DEBUG_LOG(" | Error code: ");
+    DEBUG_LOGLN(msg.getError());
   }
+
 }

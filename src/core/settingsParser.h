@@ -12,6 +12,7 @@ class Settings{
         bool nightMode = false;
         uint8_t userPagesAmount = 1;
         bool isLocked = false;
+        bool isRunning = false; 
         
         void configureDisplay(uint8_t user_mode, uint8_t display_num, uint8_t display_type);
         void storeActivePage(uint8_t pageNum);

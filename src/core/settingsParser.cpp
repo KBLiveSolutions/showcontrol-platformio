@@ -21,14 +21,70 @@ void Settings::storeActivePage(uint8_t pageNum){};
 void Settings::parseDisplayItem(uint8_t itemType, char* strBuf, int arg2){};
 
 void Settings::getItStarted(){
-      activePage.clearPage();
+      // Vérification de sécurité: éviter les appels simultanés
+      isRunning = false;
+      if (isRunning) {
+        DEBUG_LOGLN("getItStarted already running, ignoring call");
+        return;
+      }
+      isRunning = true;
+      DEBUG_LOGLN("Starting getItStarted sequence...");
+      
+      // Nettoyage sécurisé de la page active
+      if (activePage.pageType != NONE) {
+        activePage.clearPage();
+      }
+      
       DEBUG_LOGLN("Handshake response received");
-      delay(100);
+      delay(500);
+      
+      // Validation et sécurisation de _main.selectedMode
       _main.selectedMode = 0; //jsonManager.getSelectedMode();
+      
+      // Vérification de validité du mode sélectionné
+      if (_main.selectedMode >= 6) {
+        DEBUG_LOG_VALUE("Invalid selectedMode, resetting to 0: ", _main.selectedMode);
+        _main.selectedMode = 0;
+      }
+      
+      // S'assurer que les pages sont correctement initialisées
+      if (pages[_main.selectedMode].pageType == NONE) {
+        DEBUG_LOGLN("Page not initialized, setting up pages...");
+        setupPages();
+        delay(50);
+      }
+      
+      // Envoi des requêtes MIDI et OSC
       midi::sendLiveUpdateRequest();
-      sendOSCAbleset("/getValues");
+      
+      // Configuration globale sécurisée
+      DEBUG_LOGLN("Setting up global page...");
       globalPage.setupGlobalPage();
-      changeActivePage(_main.selectedMode);
+      DEBUG_LOGLN("GlobalPage setup completed");
+      
+      // Changement de page sécurisé avec délai
+      DEBUG_LOG_VALUE("Attempting to change to page: ", _main.selectedMode);
+      delay(100);  // Délai important pour stabiliser
+      
+      // Vérification finale avant changement de page
+      if (_main.selectedMode < 6 && pages[_main.selectedMode].pageType != NONE) {
+        changeActivePage(_main.selectedMode);
+        DEBUG_LOGLN("Page change successful");
+      } else {
+        DEBUG_LOGLN("Page change failed - falling back to splash page");
+        changeActivePage(8); // SPLASH_PAGE
+      }
+      
+      sendOSCAbleset("/getValues");
+      // delay(50);
+      // if(!global.isPlaying){
+      //   sendOSCAbleset("/setlist/jumpBySongs", 1);
+      //   // delay(100);  // Délai important pour stabiliser
+      //   sendOSCAbleset("/setlist/jumpBySongs", -1);
+
+      // }
+      // isRunning = false;
+      DEBUG_LOGLN("getItStarted sequence completed");
 }
 
 void Settings::onIPReceived(int ip[4]){
@@ -150,7 +206,7 @@ void Settings::setDisplayBrightness(uint8_t value) {
   DEBUG_LOG_VALUE("Display brightness set to: ", displayBrightness);
   
   // Application de la luminosité (multiplication par 20 pour étendre la plage)
-  const uint8_t pwmValue = displayBrightness * 20;
+  const uint8_t pwmValue = displayBrightness * 25;
   analogWrite(TFT_LED, pwmValue);
   jsonManager.writeOption("displayBrightness", displayBrightness);
 }
@@ -211,7 +267,7 @@ void Settings::changeSettingsValue(int value){
       
     case 1: // Display brightness
       updateSettingValue(selectedItem, value, 1, 10);
-      setDisplayBrightness(settingsPage.itemContent[selectedItem].intValue * 10);
+      setDisplayBrightness(settingsPage.itemContent[selectedItem].intValue);
       break;
       
     case 2: // IP address components

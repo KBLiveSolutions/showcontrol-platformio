@@ -21,7 +21,7 @@ void displayManager::setup() {
   // Test de base - remplir l'écran avec une couleur
   display.fillScreen(defaultBgColor);
   
-  digitalWrite(TFT_LED, HIGH); // Allumer le rétroéclairage d'abord
+  analogWrite(TFT_LED, 255); // Allumer le rétroéclairage d'abord
   
   DEBUG_LOGLN("Display setup done");
 }

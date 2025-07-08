@@ -2,6 +2,7 @@
 #include "ethernetManager.h"
 #include <OSCBundle.h>
 #include "UUID.h"
+#include "../core/utils.h"
 
 // UUID global
 extern UUID uuid;
@@ -28,8 +29,8 @@ void sendOSCAbleset(const char* address, Args... args) {
   oscMessage.add(get_uuid());
   for (int i = 0; i < ethernet.totalServiceCount; i++) {
     if (ethernet.discoveredServices[i].serviceType == ABLESETSRV) {
-      ETHERNET_DEBUG_LOG("Send Ableset: ");
-      ETHERNET_DEBUG_LOGLN(address);
+      DEBUG_LOG("Send Ableset: ");
+      DEBUG_LOGLN(address);
       showcontrolUdp.beginPacket(ethernet.discoveredServices[i].ip, ethernet.discoveredServices[i].port);
       oscMessage.send(showcontrolUdp);
       showcontrolUdp.endPacket();
@@ -43,9 +44,9 @@ void sendOSCShowControl(const char* address, Args... args) {
   addToOSCMessage(oscMessage, args...);
   for (int i = 0; i < ethernet.totalServiceCount; i++) {
     if (ethernet.discoveredServices[i].serviceType == SHOWCONTROLSRV) {
-      ETHERNET_DEBUG_LOG("Send Showcontrol: ");
-      ETHERNET_DEBUG_LOG(ethernet.discoveredServices[i].port);
-      ETHERNET_DEBUG_LOGLN(address);
+      DEBUG_LOG("Send Showcontrol: ");
+      DEBUG_LOG(ethernet.discoveredServices[i].port);
+      DEBUG_LOGLN(address);
       showcontrolUdp.beginPacket(ethernet.discoveredServices[i].ip, ethernet.discoveredServices[i].port);
       oscMessage.send(showcontrolUdp);
       showcontrolUdp.endPacket();
