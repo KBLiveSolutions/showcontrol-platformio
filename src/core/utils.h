@@ -1,5 +1,6 @@
 #pragma once
 #include "../config/consts.h"
+#include <Arduino.h>
 
 // Macros de debug centralisées pour une utilisation dans tout le projet
 #define DEBUG_LOG(message) if(debugOn) { Serial.print(message); }
@@ -45,3 +46,7 @@ extern displayed_item_t displayedItemsArray[19];
 // Define the dictionary values
 extern const int button_actions_values[ACTUAL_ENTRIES];
 extern const char* const button_actions_keys[ACTUAL_ENTRIES];
+
+void getNoteNameWithOctave(uint8_t noteNumber, char* buffer);
+const char* getActionName(uint8_t pageNumber, uint8_t buttonNum);
+uint16_t getActionColor(uint8_t pageNumber, uint8_t buttonNum);

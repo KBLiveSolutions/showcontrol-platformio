@@ -178,18 +178,20 @@ void MainPage::showSongsCounter(bool show) {
   }
   
   // Protection contre les valeurs invalides
-  if (_main.activeSongIndex < 0 || _main.songsListSize <= 0) {
-    DEBUG_LOG_VALUE("showSongsCounter: invalid activeSongIndex: ", _main.activeSongIndex);
-    DEBUG_LOG_VALUE("showSongsCounter: invalid songsListSize: ", _main.songsListSize);
-    showSpriteColor("0/0", defaultTxtColor, _SetlistBlue, songsCountSprite, true);
-    return;
-  }
-  
+//   if (_main.activeSongIndex < 0) || _main.songsListSize <= 0) {
+//     DEBUG_LOG_VALUE("showSongsCounter: invalid activeSongIndex: ", _main.activeSongIndex);
+//     DEBUG_LOG_VALUE("showSongsCounter: invalid songsListSize: ", _main.songsListSize);
+//     showSpriteColor("0/0", defaultTxtColor, _SetlistBlue, songsCountSprite, true);
+//     return;
+//   }
+  if (_main.activeSongIndex < 0) _main.activeSongIndex = 0;
+  if (_main.songsListSize < 0) _main.songsListSize = 0;
+
   // Protection contre overflow d'index
-  if (_main.activeSongIndex >= _main.songsListSize) {
-    DEBUG_LOGLN("showSongsCounter: activeSongIndex >= songsListSize, capping");
-    _main.activeSongIndex = _main.songsListSize - 1;
-  }
+//   if (_main.activeSongIndex >= _main.songsListSize) {
+//     DEBUG_LOGLN("showSongsCounter: activeSongIndex >= songsListSize, capping");
+//     _main.activeSongIndex = _main.songsListSize - 1;
+//   }
   
   char buffer[20];
   int result = snprintf(buffer, sizeof(buffer), "%d/%d", _main.activeSongIndex+1, _main.songsListSize);

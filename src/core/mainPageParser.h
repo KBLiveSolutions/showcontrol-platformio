@@ -4,14 +4,13 @@
 #include "../core/utils.h"
 #include "../config/consts.h"
 
-// void getItStarted();
 class Main{
     public:
         uint16_t songColors[MAX_SONG], activeSongColor = _White, activeSongColorShade = _LightGray, nextSongColor = _LightGray, activeSectionColor = _LightGray;
 
         uint8_t selectedMode = 0, activeSectionIndex = 0;
 
-        char activeSongName[MAX_SONG_NAME] = "Active Song";
+        char activeSongName[MAX_SONG_NAME] = "Song Name";
         char activeSectionName[MAX_SONG_NAME] = "";
         char nextSectionName[MAX_SONG_NAME] = "Next Section";
         char nextSceneName[MAX_SONG_NAME] = "Next Scene";
@@ -29,7 +28,7 @@ class Main{
         int songDurations[MAX_SONG];
         float activeSongDuration;
         int setlistTotalTime = 0;
-        char nextSongName[MAX_SONG_NAME] = "Next Song";
+        char nextSongName[MAX_SONG_NAME] = "...";
         uint8_t songsListSize = 8;
         uint8_t setlistsListSize = 8;
         float activeSongStart, activeSongEnd, activeSectionStart, activeSectionEnd;
@@ -37,6 +36,7 @@ class Main{
         int activeSongIndex, lastProgressBar = 0, previous_sec = 0;
         float remainingTimeInSet = 0, remainingTimeInSong=0;
 
+        void onNewSetLoaded();
         void sendSetlistArrayRequest();
         void sendSongArrayRequest();
         void parseDisplayItem(uint8_t itemType, char* strBuf, int arg2);

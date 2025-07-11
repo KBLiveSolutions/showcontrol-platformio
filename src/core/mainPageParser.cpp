@@ -37,6 +37,13 @@ void truncateStringWithDot(char* destination, const char* source, size_t maxLeng
   }
 }
 
+void Main::onNewSetLoaded(){
+    setActiveSongName(" ");
+    setActiveSectionName(" ");
+    setNextSongName(" ");
+    getAblesetValues();
+}
+
 void Main::sendSetlistArrayRequest(){
   static uint8_t sysex_msg[7] = { 240, 122, 29, 1, 19, 14, 247 };
   midi::sendSysexToDAW(sysex_msg, 7);
@@ -53,7 +60,7 @@ void Main::setActiveSongName(char* songName) {
   DEBUG_LOG_VALUE("onActiveSongName: ", songName);
   
   // Limitation à 20 caractères avec point de troncature
-  truncateStringWithDot(activeSongName, songName, 20);
+  truncateStringWithDot(activeSongName, songName, 16);
   
   activePage.showActiveSongName();
 }
@@ -85,12 +92,12 @@ void Main::setActiveSongIndex(int index) {
 
   // Validation des paramètres pour éviter les erreurs
   if (_main.songsListSize <= 0) {
-    DEBUG_LOG_VALUE("showSongsCounter: invalid songsListSize: ", _main.songsListSize);
+    DEBUG_LOG_VALUE("setActiveSongIndex: invalid songsListSize: ", _main.songsListSize);
     return;
   }
   
   if (_main.activeSongIndex < 0) {
-    DEBUG_LOG_VALUE("showSongsCounter: invalid activeSongIndex: ", _main.activeSongIndex);
+    DEBUG_LOG_VALUE("setActiveSongIndex: invalid activeSongIndex: ", _main.activeSongIndex);
     return;
   }
 
@@ -99,13 +106,13 @@ void Main::setActiveSongIndex(int index) {
   if (_main.activeSongIndex == 0) {
     // Première chanson : LED 3 éteinte (pas de précédent)
     if (3 < NUM_LEDS && l) {
-      l[3].led_off();
+      pages[0].setRGBColor(3, 0, 0, 0);
       DEBUG_LOGLN("LED 3 OFF - First song");
     }
   } else {
     // Pas la première chanson : LED 3 en blanc
     if (3 < NUM_LEDS && l) {
-      l[3].show_white();  // Blanc
+      pages[0].setRGBColor(3, 100, 100, 100);  // Blanc
       DEBUG_LOGLN("LED 3 WHITE - Previous available");
     }
   }
@@ -114,16 +121,18 @@ void Main::setActiveSongIndex(int index) {
   if (_main.activeSongIndex == _main.songsListSize - 1) {
     // Dernière chanson : LED 4 éteinte (pas de suivant)
     if (4 < NUM_LEDS && l) {
-      l[4].led_off();
+      pages[0].setRGBColor(4, 0, 0, 0);
       DEBUG_LOGLN("LED 4 OFF - Last song");
     }
   } else {
     // Pas la dernière chanson : LED 4 en blanc
     if (4 < NUM_LEDS && l) {
-      l[4].show_white();  // Blanc
+      pages[0].setRGBColor(4, 100, 100, 100);   // Blanc
       DEBUG_LOGLN("LED 4 WHITE - Next available");
     }
   }
+  l[3].show_color();
+  l[4].show_color();
 }
 
 void Main::setActiveSongDuration(float duration) {
@@ -194,18 +203,18 @@ void Main::setActiveSectionColor(uint16_t color) {
   // activePage.showActiveSectionColor(activeSectionColor);
 }
 void Main::setSections(char sections[][MAX_SONG_NAME], int count) {
-  // for (int i = 0; i < count; i++) {
-  //   strcpy(activePage.sections[i], sections[i]);
-  // DEBUG_LOG_VALUE("sections changed: ", activePage.sections[i]);
-  // }
+  for (int i = 0; i < count; i++) {
+    strcpy(sections[i], sections[i]);
+  DEBUG_LOG_VALUE("sections changed: ", sections[i]);
+  }
   // activePage.showSections(activePage.sections, count);
 }
 void Main::setSongs(char songs[][MAX_SONG_NAME], int count) {
-  // songsListSize = count;
-  // for (int i = 0; i < count; i++) {
-  //   strcpy(songsList[i], songs[i]);
-  // DEBUG_LOG_VALUE("songs changed: ", songsList[i]);
-  // }
+  songsListSize = count;
+  for (int i = 0; i < count; i++) {
+    strcpy(songsList[i], songs[i]);
+    DEBUG_LOG_VALUE("songs changed: ", songsList[i]);
+  }
   // activePage.showSongs(songsList, count);
 }
 void Main::setSongDurations(int durations[], int count) {

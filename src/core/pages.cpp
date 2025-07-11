@@ -241,6 +241,9 @@ void Page::showPage() {
       mainPage.showRemainingTimeInSong(true);
       mainPage.showRemainingTimeInSet(true);
       mainPage.showSongsCounter(true);
+      showActiveSongName();
+      showActiveSectionName();
+      showNextSongName();
     }
     else {
       DEBUG_LOGLN("Displaying USER page elements");
@@ -325,17 +328,19 @@ void Page::clearPage() {
     case SPLASH:
       splashPage.clearPage();
       break;
-    case SETLIST:
+    case SETLIST:{
       mainPage.showRemainingTimeInSet(false);
       mainPage.updateProgressBarFine(false);
       mainPage.showNextSprite(false);
       mainPage.showRemainingTimeInSong(false);
       mainPage.showSongsCounter(false);
+      }
       break;
-    case USER:
+    case USER:{
       showButtons(false);
       mainPage.showMainUserSprite(" ", defaultBgColor);
       mainPage.showSub1UserSprite(" ", defaultBgColor);
+      }
       break;
     default:
       break;
@@ -351,12 +356,29 @@ void Page::checkLeds(uint8_t channel, uint8_t _control, uint8_t value) {
     if (_control == control_led_cc[i] && channel == control_ch[i]) {
       // Vérification de sécurité pour l'accès au tableau l[]
       if (i + 1 < NUM_LEDS) {
-        l[i + 1].setColor(value, channel);
+        l[i + 1].setIndexedColor(value, channel);
         l[i + 1].show_color();
         // if (pageType == USER) mainPage.showButtonSprite(buttonPressed[i], i, getActionName(pageNumber, i), getActionColor(pageNumber, i), getLuminance(i));
       }
       break;
     }
+  }
+}
+
+void Page::setRGBColor(uint8_t idx, uint8_t red, uint8_t green, uint8_t blue) {
+  // Vérification de sécurité pour l'accès au tableau l[]
+  led[idx][0] = red;
+  led[idx][1] = green;
+  led[idx][2] = blue;
+  l[idx].setRGBColor(red, green, blue);
+  l[idx].show_color();
+}
+
+void Page::showLeds(){  
+  for (int i = 0; i < NUM_LEDS; i++) {
+   // Vérification de sécurité pour l'accès au tableau l[]
+   l[i].setRGBColor(led[i][0], led[i][1], led[i][2]);
+   l[i].show_color();
   }
 }
 
@@ -540,304 +562,6 @@ bool operator!=(const Page& lhs, const Page& rhs) {
   return !(lhs == rhs);
 }
 
-void removeUserPage(int pageNum) {
-  // À implémenter
-}
-
-
-// ====================================
-// GLOBAL
-// ====================================
-
-void setupPages() {
-  // Configuration optimisée avec des tableaux de données
-  static const uint8_t buttonCCs[] = {44, 12, 33, 34, 113};
-  static const uint8_t ledCCs[] = {1, 34, 33, 34, 113};
-  
-  for (uint8_t i = 0; i < 5; ++i) {
-    pages[0].setButtonControl(i, CC, buttonCCs[i], 15, 0, 0);
-    pages[0].setLedControl(i, CC, ledCCs[i], 15);
-  }
-
-  activePage = SPLASH_PAGE;
-  previousActivePage = SPLASH_PAGE;
-  DEBUG_LOGLN("SETUP PAGES DONE");
-}
-
-
-void changeActivePage(uint8_t pageNum) {
-    DEBUG_LOG_VALUE("changeActivePage called with pageNum: ", pageNum);
-    
-    // Protection contre les appels simultanés
-    static bool isChanging = false;
-    if (isChanging) {
-        DEBUG_LOGLN("Page change already in progress, ignoring");
-        return;
-    }
-    isChanging = true;
-    
-    previousActivePage = activePage;  // Sauvegarde commune
-    leds::clearLeds();  // Nettoyage des LEDs avant changement de page
-    if (pageNum < 6) {
-        // Vérification que la page existe et est initialisée
-        if (pages[pageNum].pageType == NONE) {
-            DEBUG_LOG_VALUE("Page not initialized: ", pageNum);
-            isChanging = false;
-            return;
-        }
-        activePage = pages[pageNum];
-        DEBUG_LOG_VALUE("Changed to user page: ", pageNum);
-        // jsonManager.writeOption("activePage", pageNum);
-    } 
-    else if (pageNum >= 6 && pageNum <= 8) {
-        // Utilisation d'un tableau statique pour éviter les if/else multiples
-        static Page* const specialPages[] = {&SETTINGS_PAGE, &MENU_PAGE, &SPLASH_PAGE};
-        activePage = *specialPages[pageNum - 6];
-        DEBUG_LOG_VALUE("Changed to special page: ", pageNum);
-        
-        if (pageNum == 7) {  // MENU_PAGE
-            menuPage.showPage();
-            DEBUG_LOGLN("MenuPage displayed successfully");
-            isChanging = false;
-            return;  // Early return pour éviter les appels redondants
-        }
-    }
-    else {
-        // Page invalide, ne rien faire
-        DEBUG_LOG_VALUE("Invalid page number: ", pageNum);
-        isChanging = false;
-        return;
-    }
-    
-    // Affichage sécurisé de la page avec gestion d'erreurs
-    if (activePage.pageType != NONE) {
-        activePage.showPage();
-        DEBUG_LOGLN("Page displayed successfully");
-        
-        // Appels aux pages globales avec gestion d'erreurs
-        globalPage.showTitle();
-        globalPage.showPageIcon();
-        DEBUG_LOGLN("Global page elements displayed");
-        
-        DEBUG_LOG_VALUE("Active page changed to: ", activePage.pageNumber);
-    } else {
-        DEBUG_LOGLN("Failed to change page - activePage has NONE type");
-    }
-    
-    isChanging = false;
-}
-
-
-
-
-// ====================================
-// Fonctions utilitaires
-// ====================================
-
-const char noteNames[12][3] PROGMEM = {
-  "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
-};
-
-void getNoteNameWithOctave(uint8_t noteNumber, char* buffer) {
-  if (buffer == nullptr) return;  // Protection contre pointeur null
-  
-  uint8_t noteIndex = noteNumber % 12;
-  int8_t octave = (noteNumber / 12) - 2;
-  strcpy_P(buffer, (PGM_P)noteNames[noteIndex]);
-  char octaveStr[3];
-  itoa(octave, octaveStr, 10);
-  strcat(buffer, octaveStr);
-}
-
-
-const char* getActionName(uint8_t pageNumber, uint8_t buttonNum) {
-  // Validation stricte des paramètres d'entrée
-  if (pageNumber >= 6) {
-    DEBUG_LOG_VALUE("getActionName: invalid pageNumber: ", pageNumber);
-    return "ERR_PAGE";
-  }
-  
-  if (buttonNum >= 5) {
-    DEBUG_LOG_VALUE("getActionName: invalid buttonNum: ", buttonNum);
-    return "ERR_BTN";
-  }
-  
-  // Vérification que la page est initialisée
-  const Page& page = pages[pageNumber];
-  if (page.pageType == NONE) {
-    DEBUG_LOG_VALUE("getActionName: page not initialized: ", pageNumber);
-    return "UNINIT";
-  }
-  
-  static char buffer[32];  // Buffer agrandi pour sécurité (était 20)
-  static char formattedActionName[40];  // Buffer pour le résultat formaté
-  
-  // Protection contre les accès mémoire invalides
-  int controlNum = 0;
-  uint8_t custom = 0;
-  control_type_t controlType = CC;
-  uint8_t channel = 0;
-  
-  // Accès sécurisé aux tableaux de contrôle
-  if (buttonNum < sizeof(page.control_cc)/sizeof(page.control_cc[0])) {
-    controlNum = page.control_cc[buttonNum];
-    custom = page.control_custom[buttonNum];
-    controlType = page.control_type[buttonNum];
-    channel = page.control_ch[buttonNum];
-  } else {
-    DEBUG_LOG_VALUE("getActionName: buttonNum out of control array bounds: ", buttonNum);
-    return "OOB";
-  }
-  
-  const char* actionName;
-
-  if (custom == 0) {
-    // Recherche sécurisée dans le dictionnaire
-    actionName = "Unknown";  // Valeur par défaut
-    
-    // Protection contre ACTUAL_ENTRIES non défini ou invalide
-    #ifndef ACTUAL_ENTRIES
-    #define ACTUAL_ENTRIES 0
-    #endif
-    
-    if (ACTUAL_ENTRIES > 0 && button_actions_values && button_actions_keys) {
-      for (int i = 0; i < ACTUAL_ENTRIES; i++) {
-        if (button_actions_values[i] == controlNum) {
-          actionName = button_actions_keys[i];
-          if (actionName) {  // Vérification que le pointeur n'est pas null
-            break;
-          }
-        }
-      }
-    } else {
-      DEBUG_LOGLN("getActionName: button_actions arrays not available");
-    }
-  } else {
-    // Construction sécurisée du nom personnalisé
-    uint8_t safeChannel = (channel < 16) ? channel + 1 : 1;  // Protection overflow
-    
-    switch (controlType) {
-      case NOTE: {
-        char noteNameWithOctave[8];  // Buffer agrandi
-        memset(noteNameWithOctave, 0, sizeof(noteNameWithOctave));
-        
-        // Validation du controlNum pour les notes
-        if (controlNum >= 0 && controlNum <= 127) {
-          getNoteNameWithOctave(controlNum, noteNameWithOctave);
-        } else {
-          strcpy(noteNameWithOctave, "INV");
-        }
-        
-        int result = snprintf(buffer, sizeof(buffer), "%s Ch.%d", noteNameWithOctave, safeChannel);
-        if (result < 0 || result >= sizeof(buffer)) {
-          strcpy(buffer, "NOTE_ERR");
-        }
-        break;
-      }
-      case CC:
-        if (controlNum >= 0 && controlNum <= 127) {
-          int result = snprintf(buffer, sizeof(buffer), "CC%d Ch.%d", controlNum, safeChannel);
-          if (result < 0 || result >= sizeof(buffer)) {
-            strcpy(buffer, "CC_ERR");
-          }
-        } else {
-          strcpy(buffer, "CC_INV");
-        }
-        break;
-      case PC:
-        if (controlNum >= 0 && controlNum <= 127) {
-          int result = snprintf(buffer, sizeof(buffer), "PC%d Ch.%d", controlNum, safeChannel);
-          if (result < 0 || result >= sizeof(buffer)) {
-            strcpy(buffer, "PC_ERR");
-          }
-        } else {
-          strcpy(buffer, "PC_INV");
-        }
-        break;
-      default:
-        strcpy(buffer, "UNK_TYPE");
-        break;
-    }
-    actionName = buffer;
-  }
-
-  // Validation finale de actionName
-  if (!actionName) {
-    DEBUG_LOGLN("getActionName: actionName is null");
-    return "NULL_ACT";
-  }
-
-  // Optimisation: vérification rapide s'il n'y a pas d'espaces
-  const char* spacePtr = strchr(actionName, ' ');
-  if (spacePtr == nullptr) {
-    return actionName;  // Pas d'espaces, retour direct
-  }
-
-  // Transformation sécurisée des espaces en sauts de ligne
-  size_t len = strlen(actionName);
-  if (len >= sizeof(formattedActionName)) {
-    len = sizeof(formattedActionName) - 1;  // Évite le débordement
-  }
-  
-  size_t j = 0;
-  for (size_t i = 0; i < len && j < sizeof(formattedActionName) - 1; i++) {
-    formattedActionName[j++] = (actionName[i] == ' ') ? '\n' : actionName[i];
-  }
-  formattedActionName[j] = '\0';
-
-  return formattedActionName;
-}
-
-uint16_t getActionColor(uint8_t pageNumber, uint8_t buttonNum) {
-  // Validation stricte des paramètres
-  if (pageNumber >= 6) {
-    DEBUG_LOG_VALUE("getActionColor: invalid pageNumber: ", pageNumber);
-    return defaultBgColor;
-  }
-  
-  if (buttonNum >= 5) {
-    DEBUG_LOG_VALUE("getActionColor: invalid buttonNum: ", buttonNum);
-    return defaultBgColor;
-  }
-  
-  // Vérification de sécurité pour l'accès au tableau l[]
-  if (buttonNum + 1 >= NUM_LEDS) {
-    DEBUG_LOG_VALUE("getActionColor: LED index out of bounds: ", buttonNum + 1);
-    return defaultBgColor;
-  }
-  
-  // Vérification que le tableau l[] est initialisé
-  if (!l) {
-    DEBUG_LOGLN("getActionColor: LED array not initialized");
-    return defaultBgColor;
-  }
-  
-  // Accès sécurisé aux valeurs de couleur LED
-  const auto& led = l[buttonNum + 1];
-  
-  // Validation des valeurs de couleur
-  uint8_t r = led.r;
-  uint8_t g = led.g;
-  uint8_t b = led.b;
-  
-  // Protection contre les valeurs invalides
-  if (r > 127) r = 127;
-  if (g > 127) g = 127;
-  if (b > 127) b = 127;
-  
-  // Conversion sécurisée des couleurs LED avec protection overflow
-  uint16_t result = RRRGB888toRGB565(r << 1, g << 1, b << 1);
-  
-  // Validation du résultat
-  if (result == 0 && (r > 0 || g > 0 || b > 0)) {
-    DEBUG_LOGLN("getActionColor: color conversion resulted in black, using default");
-    return defaultBgColor;
-  }
-  
-  return result;
-}
-
-
 Page& Page::operator=(const Page& other) {
     if (this != &other) {
         pageNumber = other.pageNumber;
@@ -859,11 +583,35 @@ Page& Page::operator=(const Page& other) {
         memcpy(pedal_toggle, other.pedal_toggle, sizeof(pedal_toggle));
         memcpy(pedal_custom, other.pedal_custom, sizeof(pedal_custom));
         memcpy(displayedItem, other.displayedItem, sizeof(displayedItem));
+        memcpy(led, other.led, sizeof(led));
         
         maxSpritesAmnt = other.maxSpritesAmnt;
     }
     return *this;
 }
+
+void removeUserPage(int pageNum) {
+  // À implémenter
+}
+
+
+// ====================================
+// GLOBAL
+// ====================================
+
+void setupPages() {
+  // Configuration optimisée avec des tableaux de données
+  static const uint8_t buttonCCs[] = {44, 12, 33, 34, 113};
+  static const uint8_t ledCCs[] = {1, 34, 33, 34, 113};
+  
+  for (uint8_t i = 0; i < 5; ++i) {
+    pages[0].setButtonControl(i, CC, buttonCCs[i], 15, 0, 0);
+    pages[0].setLedControl(i, CC, ledCCs[i], 15);
+  }
+  switchActivePage(SPLASH_PAGE);
+  DEBUG_LOGLN("SETUP PAGES DONE");
+}
+
 
 // ====================================
 // DISPLAY
@@ -882,4 +630,36 @@ void Page::displayItemByType(displayed_item_t itemType, const char* content) {
   }
 }
 
-
+void switchActivePage(Page& newPage) {
+    DEBUG_LOG_VALUE("switchActivePage called with pageNumber: ", newPage.pageNumber);
+    
+    // Protection contre les appels simultanés
+    static bool isSwitching = false;
+    if (isSwitching) {
+        DEBUG_LOGLN("Page switch already in progress, ignoring");
+        return;
+    }
+    isSwitching = true;
+    
+    // CORRECTION: Sauvegarder AVANT de nettoyer
+    if(activePage != SETTINGS_PAGE && activePage != MENU_PAGE) previousActivePage = activePage;  // Sauvegarde AVANT nettoyage
+    
+    activePage.clearPage();
+    DEBUG_LOG_VALUE("switchActivePage: previousActivePage pageNumber: ", previousActivePage.pageNumber);
+    
+    if (newPage.pageType == NONE) {
+        DEBUG_LOGLN("switchActivePage: newPage is NONE, aborting");
+        isSwitching = false;
+        return;
+    }
+    activePage = newPage;
+        // Appels aux pages globales avec gestion d'erreurs
+    if (newPage.pageType != SPLASH) {
+      globalPage.showTitle();
+      globalPage.showPageIcon();
+    }
+    // Affichage sécurisé de la nouvelle page
+    activePage.showPage();
+    activePage.showLeds();  // Affichage des LEDs après changement de page
+    isSwitching = false;
+}

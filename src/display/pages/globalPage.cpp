@@ -259,10 +259,10 @@ void GlobalPage::setupGlobalPage() {
   showCounter();
   
   DEBUG_LOGLN("Showing page icon...");
-  showPageIcon();
+  // showPageIcon();
   
   DEBUG_LOGLN("Showing title...");
-  showTitle();
+  // showTitle();
   
   DEBUG_LOGLN("Showing audio interface scene...");
   showAudioInterfaceScene();

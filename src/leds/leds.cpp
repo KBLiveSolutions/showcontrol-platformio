@@ -22,7 +22,7 @@ void Led::set_default() {
   b = initColor.b;
 }
 
-void Led::setColor(uint8_t color, uint8_t channel) {
+void Led::setIndexedColor(uint8_t color, uint8_t channel) {
   RGBColor paletteColor = LedConfig::getPaletteColor(color);
   r = paletteColor.r;
   g = paletteColor.g;
@@ -39,6 +39,12 @@ void Led::setColor(uint8_t color, uint8_t channel) {
     //   b = colorIndex[color][2];
     // }
   }
+}
+
+void Led::setRGBColor(uint8_t red, uint8_t green, uint8_t blue) {
+    r = red;
+    g = green;
+    b = blue;
 }
 
 void Led::setInitColor() {
@@ -69,11 +75,11 @@ void Led::showPixel(uint8_t r, uint8_t g, uint8_t b) {
 }
 
 void Led::show_color() {
-  showPixel(r * 2, g * 2, b * 2);
+  showPixel(r, g, b);
 }
 
 void Led::show_direct_color(int r, int g, int b) {
-  showPixel(r * 2, g * 2, b * 2);
+  showPixel(r, g, b);
 }
 
 void Led::led_update(bool button_state) {
@@ -86,7 +92,7 @@ void Led::show_green() {
 }
 
 void Led::show_lightGreen() {
-  showPixel(0, 80, 5);
+  showPixel(0, 40, 5);
 }
 
 void Led::show_white() {
@@ -99,6 +105,14 @@ void Led::show_lightWhite() {
 
 void Led::show_red() {
   showPixel(255, 0, 0);
+}
+
+
+void Led::set_red() {
+    r = 255;
+    g = 0;
+    b = 0;
+  show_color();
 }
 
 void Led::led_off() {
@@ -120,10 +134,8 @@ void leds::setup() {
 
 void leds::clearLeds() {
   for (uint8_t i = 1; i < NUM_LEDS; ++i) {
-    l[i].r = 0;
-    l[i].g = 0;
-    l[i].b = 0;
-    l[i].show_color();
+    l[i].show_direct_color(0, 0, 0);
   }
 }
+
 

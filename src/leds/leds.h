@@ -28,7 +28,8 @@ public:
 
   void begin();
   void set_default();
-  void setColor(uint8_t color, uint8_t channel);
+  void setRGBColor(uint8_t red, uint8_t green, uint8_t blue);
+  void setIndexedColor(uint8_t color, uint8_t channel);
   void setInitColor();
   void show_color();
   void show_direct_color(int r, int g, int b);
@@ -41,6 +42,7 @@ public:
   void show_lightGreen();
   void show_green();
   void show_red();
+  void set_red();
   void led_off();
   void showPixel(uint8_t r, uint8_t g, uint8_t b);
 };

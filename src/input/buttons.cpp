@@ -1,6 +1,7 @@
 #include "buttons.h"
 #include "mux.h"
 #include "actions.h"
+#include "../core/pages.h"
 
 const int b_pins[NUM_BUTTONS] = {2, 30, 30, 30, 30, 30, 30, 24, 25};
 
@@ -24,6 +25,7 @@ void buttns::read()
       onLongButtonPress(p);
     }
   }
+
   // Pour les 6 suivants sur le PCF
   for (uint8_t p = 0; p < 7; p++)
   {

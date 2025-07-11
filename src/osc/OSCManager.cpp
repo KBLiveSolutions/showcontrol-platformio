@@ -31,7 +31,10 @@ void sendOSCAblesetSubscribe() {
   oscMessage.add(get_uuid());
   for (int i = 0; i < ethernet.totalServiceCount; i++) {
     if (ethernet.discoveredServices[i].serviceType == ABLESETSRV) {
-      DEBUG_LOGLN("Send Ableset Subscribe");
+      DEBUG_LOG("Send Ableset Subscribe to ");
+      DEBUG_LOG(ethernet.discoveredServices[i].ip);
+      DEBUG_LOG(":");
+      DEBUG_LOGLN(ethernet.discoveredServices[i].port);
       showcontrolUdp.beginPacket(ethernet.discoveredServices[i].ip, ethernet.discoveredServices[i].port);
       oscMessage.send(showcontrolUdp);
       showcontrolUdp.endPacket();
@@ -39,8 +42,13 @@ void sendOSCAblesetSubscribe() {
   }
 }
 
-void getValuesOSC(){
+void getAblesetValues() {
+  settings.isRunning = true; // Set the running state to true
   sendOSCAbleset("/getValues");
+}
+
+void getValuesOSC(){
+  getAblesetValues();
   sendOSCShowControl("/showcontrol/getValues");
 }
 

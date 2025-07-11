@@ -30,7 +30,11 @@ void sendOSCAbleset(const char* address, Args... args) {
   for (int i = 0; i < ethernet.totalServiceCount; i++) {
     if (ethernet.discoveredServices[i].serviceType == ABLESETSRV) {
       DEBUG_LOG("Send Ableset: ");
-      DEBUG_LOGLN(address);
+      DEBUG_LOG(address);
+      DEBUG_LOG(" to ");
+      DEBUG_LOG(ethernet.discoveredServices[i].ip);
+      DEBUG_LOG(":");
+      DEBUG_LOGLN(ethernet.discoveredServices[i].port);
       showcontrolUdp.beginPacket(ethernet.discoveredServices[i].ip, ethernet.discoveredServices[i].port);
       oscMessage.send(showcontrolUdp);
       showcontrolUdp.endPacket();
@@ -53,7 +57,7 @@ void sendOSCShowControl(const char* address, Args... args) {
     }
   }
 }
-
+void getAblesetValues();
 void sendOSCAblesetSubscribe();
 void getValuesOSC();
 void sendOSCSysex(uint8_t* sysex_msg, int _length);

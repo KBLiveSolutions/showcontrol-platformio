@@ -179,8 +179,10 @@ void MenuPage::showPage() {
             maxItems = min(activeMenuSize, (int)(sizeof(menuItems)/sizeof(menuItems[0])));
             
             for (uint8_t i = 0; i < maxItems; i++) {
+                DEBUG_LOG_VALUE("showPage: processing song index: ", i);    
                 // Protection contre l'accès hors limites de _main.songsList
                 if (i < sizeof(_main.songsList)/sizeof(_main.songsList[0]) && _main.songsList[i]) {
+                    DEBUG_LOG_VALUE("showPage: copying song name: ", _main.songsList[i]);
                     strncpy(menuItems[i], _main.songsList[i], sizeof(menuItems[i]) - 1);
                     menuItems[i][sizeof(menuItems[i]) - 1] = '\0';
                 } else {

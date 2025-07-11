@@ -1,4 +1,3 @@
-
 #include "../config/jsonManager.h"
 #include "settingsParser.h"
 #include "pages.h"
@@ -21,14 +20,28 @@ void Settings::storeActivePage(uint8_t pageNum){};
 void Settings::parseDisplayItem(uint8_t itemType, char* strBuf, int arg2){};
 
 void Settings::getItStarted(){
-      // Vérification de sécurité: éviter les appels simultanés
-      isRunning = false;
-      if (isRunning) {
-        DEBUG_LOGLN("getItStarted already running, ignoring call");
-        return;
-      }
-      isRunning = true;
+      DEBUG_LOGLN("getItStarted called");
+      
+      // Si déjà en cours d'exécution, ne pas relancer tout le processus
+      // if (isRunning) {
+      //   DEBUG_LOGLN("Application already running, skipping full initialization");
+      //   DEBUG_LOG("Current activePage.pageType: ");
+      //   DEBUG_LOGLN(activePage.pageType);
+      //   // Mais on peut quand même faire quelques actions légères
+      //   if (activePage.pageType == SPLASH) {
+      //     // Si on est encore sur la splash page, changer vers la page principale
+      //     if (_main.selectedMode < 6 && pages[_main.selectedMode].pageType != NONE) {
+      //       switchActivePage(pages[_main.selectedMode]);
+      //       DEBUG_LOGLN("Switched from splash to main page");
+      //     }
+      //   } else {
+      //     DEBUG_LOGLN("Not on splash page, no page switch needed");
+      //   }
+      //   return;
+      // }
+      
       DEBUG_LOGLN("Starting getItStarted sequence...");
+      isRunning = true;  // Marquer comme en cours d'exécution
       
       // Nettoyage sécurisé de la page active
       if (activePage.pageType != NONE) {
@@ -36,7 +49,6 @@ void Settings::getItStarted(){
       }
       
       DEBUG_LOGLN("Handshake response received");
-      delay(500);
       
       // Validation et sécurisation de _main.selectedMode
       _main.selectedMode = 0; //jsonManager.getSelectedMode();
@@ -68,23 +80,16 @@ void Settings::getItStarted(){
       
       // Vérification finale avant changement de page
       if (_main.selectedMode < 6 && pages[_main.selectedMode].pageType != NONE) {
-        changeActivePage(_main.selectedMode);
+        switchActivePage(pages[_main.selectedMode]);
         DEBUG_LOGLN("Page change successful");
       } else {
         DEBUG_LOGLN("Page change failed - falling back to splash page");
-        changeActivePage(8); // SPLASH_PAGE
+        switchActivePage(SPLASH_PAGE);
       }
-      
-      sendOSCAbleset("/getValues");
-      // delay(50);
-      // if(!global.isPlaying){
-      //   sendOSCAbleset("/setlist/jumpBySongs", 1);
-      //   // delay(100);  // Délai important pour stabiliser
-      //   sendOSCAbleset("/setlist/jumpBySongs", -1);
-
-      // }
-      // isRunning = false;
+      getAblesetValues();
       DEBUG_LOGLN("getItStarted sequence completed");
+      // Marquer comme terminé seulement à la fin
+      // isRunning reste à true pour indiquer que l'application est active
 }
 
 void Settings::onIPReceived(int ip[4]){
@@ -215,29 +220,40 @@ void Settings::setDisplayBrightness(uint8_t value) {
 void Settings::exitSettings(){
   DEBUG_LOGLN("Exiting settings and saving configuration");
   
+  switchActivePage(previousActivePage);
   // Nettoyage de la page des paramètres
-  settingsPage.clearPage();
-  
   // Application des nouvelles configurations réseau
   const int newPort = settingsPage.itemContent[6].intValue;
-  ethernet.setPort(newPort);
+  if(newPort != showcontrolLocalPort) ethernet.setPort(newPort);
   DEBUG_LOG_VALUE("Applied new port: ", newPort);
   
   // Configuration de l'adresse IP
-  const int ip[4] = {
+  const int newIP[4] = {
     settingsPage.itemContent[2].intValue, 
     settingsPage.itemContent[3].intValue, 
     settingsPage.itemContent[4].intValue, 
     settingsPage.itemContent[5].intValue
   };
-  ethernet.setIp(const_cast<int*>(ip));
-  DEBUG_LOG("Applied new IP address");
+  
+  // Comparer avec l'IP actuelle (manualIP déjà déclaré extern dans ethernetManager.h)
+  bool ipChanged = (newIP[0] != manualIP[0] || 
+                    newIP[1] != manualIP[1] || 
+                    newIP[2] != manualIP[2] || 
+                    newIP[3] != manualIP[3]);
+  
+  if (ipChanged) {
+    ethernet.setIp(const_cast<int*>(newIP));
+    DEBUG_LOG("Applied new IP address: ");
+    DEBUG_LOG(newIP[0]); DEBUG_LOG(".");
+    DEBUG_LOG(newIP[1]); DEBUG_LOG(".");
+    DEBUG_LOG(newIP[2]); DEBUG_LOG(".");
+    DEBUG_LOGLN(newIP[3]);
+  } else {
+    DEBUG_LOGLN("IP address unchanged, skipping update");
+  }
   
   // Restauration de la page précédente
-  activePage = previousActivePage;
-  previousActivePage.showPage();
   
-  DEBUG_LOGLN("Settings saved and page restored");
   
   // TODO: Implement subnet mask configuration if needed
   // int submask[4] = {settingsPage.itemContent[7].intValue, settingsPage.itemContent[8].intValue, settingsPage.itemContent[9].intValue, settingsPage.itemContent[10].intValue};

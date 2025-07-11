@@ -66,7 +66,10 @@ struct Page {
     
     // Leds
 
+    uint8_t led[NUM_LEDS][3] = {{100, 100, 100}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
+    void setRGBColor(uint8_t, uint8_t, uint8_t, uint8_t); // Exemple de méthode pour définir la couleur d'une LED
     void checkLeds(uint8_t channel, uint8_t _control, uint8_t value);
+    void showLeds();
 
     // Configuration
     void setDisplay(uint8_t display_num, uint8_t);
@@ -87,7 +90,6 @@ extern Page SPLASH_PAGE;
 extern Page activePage;
 extern Page previousActivePage;
 
-
 // Fonctions utilitaires
 bool operator==(const Page& lhs, const Page& rhs);
 bool operator!=(const Page& lhs, const Page& rhs);
@@ -95,11 +97,8 @@ bool operator!=(const Page& lhs, const Page& rhs);
 void removeUserPage(int pageNum);
 void setupPages();
 
-void getNoteNameWithOctave(uint8_t noteNumber, char* buffer);
-const char* getActionName(uint8_t pageNumber, uint8_t buttonNum);
-uint16_t getActionColor(uint8_t pageNumber, uint8_t buttonNum);
 
-void changeActivePage(uint8_t pageNum);
+// void changeActivePage(uint8_t pageNum);
 
 // void activePage.showPage();
 // void showSongsCounter(bool show);
@@ -107,3 +106,4 @@ void changeActivePage(uint8_t pageNum);
 // Helper functions
     void handleSetlistButton(uint8_t buttonNum);
     
+void switchActivePage(Page& );

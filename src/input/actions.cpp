@@ -22,13 +22,19 @@ bool shift = false;
 
 void onLockButtonPress()
 {
-    // settings.isLocked = !settings.isLocked;
+    if (activePage.pageType == MENU || activePage.pageType == SETTINGS) {
+        switchActivePage(previousActivePage); // Return to previous page if in MENU or SETTINGS
+        DEBUG_LOGLN("Returning to previous page from MENU or SETTINGS");    
+        return;
+    }
+    settings.isLocked = !settings.isLocked;
     // jsonManager.writeOption("settings.isLocked", settings.isLocked);
     // globalPage.showLock(settings.isLocked);
-    // if (settings.isLocked)
-    //     l[0].show_red();
-    // else
-    //     l[0].led_off();
+    if (settings.isLocked){
+        l[0].setRGBColor(255, 0, 0); // Show red color for locked state
+        l[0].show_color();
+    }
+    else l[0].led_off();
     shift = true;
 };
 
@@ -44,92 +50,98 @@ void onLockButtonRelease()
     shift = false;
 };
 
-void onEncoderButtonPress()
-{
+void onEncoderButtonPress(){
     if(shift) debugOn = !debugOn;
     DEBUG_LOG_VALUE("Encoder button pressed, shift: ", shift);  
-    switch (activePage.pageType)
-    {
-    case SETTINGS:
-        settings.validateSettings();
+    switch (activePage.pageType){
+        case SETTINGS:
+            settings.validateSettings();
+            break;
+        case MENU:{
+            DEBUG_LOGLN("Encoder button pressed in MENU_PAGE");
+            DEBUG_LOG_VALUE("Active menu: ", menuPage.activeMenuItem);
+            DEBUG_LOG_VALUE("Active menu size -1: ", menuPage.activeMenuSize - 1);
+            switch (menuPage.activeMenu){
+                case MAIN_MENU:{
+                    if (menuPage.activeMenuItem == menuPage.activeMenuSize - 1){ // Settings
+                        DEBUG_LOGLN("Settings menu item selected");
+                        switchActivePage(SETTINGS_PAGE);
+                    }
+                    else{ // Main menu item selected
+                        DEBUG_LOGLN("Main menu item selected");
+                        DEBUG_LOG_VALUE("Selected mode: ", menuPage.activeMenuItem);
+                        _main.selectedMode = menuPage.activeMenuItem;
+                        switchActivePage(pages[_main.selectedMode]);
+                        jsonManager.writeOption("selectedMode", _main.selectedMode);
+                    }
+                }
+                break;
+                case SONG_MENU:
+                {
+                    DEBUG_LOG_VALUE("Selected song: ", menuPage.activeMenuItem);
+                    switchActivePage(pages[0]);
+                    delay(20);
+                    sendOSCAbleset("/setlist/jumpToSong", menuPage.activeMenuItem + 1);
+                }
+                break;
+                // case SETLIST_MENU:
+                // {
+                //     int selectedSetlist = menuPage.activeMenuItem;
+                //     midi::sendActiveSetlistChange(selectedSetlist);
+                // }
+                // break;
+            }
+        }
+        menuPage.activeMenu = MENU_OFF;
         break;
-    case MENU:
-        activePage.clearPage();
-        DEBUG_LOGLN("Encoder button pressed in MENU_PAGE");
-        DEBUG_LOG_VALUE("Active menu: ", menuPage.activeMenuItem);
-        DEBUG_LOG_VALUE("Active menu siez -1: ", menuPage.activeMenuSize - 1);
-        if (menuPage.activeMenu == MAIN_MENU)
-        {
-            if (menuPage.activeMenuItem == menuPage.activeMenuSize - 1)
-            { // Settings
-                DEBUG_LOGLN("Settings menu item selected");
-                // previousActivePage = activePage;
-                activePage = SETTINGS_PAGE;
-                settingsPage.showPage();
-            }
-            else
-            { // Main menu item selected
-                DEBUG_LOGLN("Main menu item selected");
-                DEBUG_LOG_VALUE("Selected mode: ", menuPage.activeMenuItem);
-                _main.selectedMode = menuPage.activeMenuItem;
-                activePage = pages[_main.selectedMode];
-                activePage.showPage();
-                jsonManager.writeOption("selectedMode", _main.selectedMode);
-            }
+        case SETLIST:{
+            DEBUG_LOGLN("Encoder button pressed in SETLIST_PAGE");
+            menuPage.activeMenu = SONG_MENU;
+            getAblesetValues();
+            menuPage.activeMenuItem = _main.activeSongIndex;
+            switchActivePage(MENU_PAGE);
         }
-        else if (menuPage.activeMenu == SONG_MENU)
-        {
-            // menuPage.createMenu(SONG_MENU, _main.selectedMode);
-        }
-        else if (menuPage.activeMenu == SETLIST_MENU)
-        {
-            int selectedSetlist = menuPage.activeMenuItem;
-            midi::sendActiveSetlistChange(selectedSetlist);
-        }
+        break;
     }
-
-    menuPage.activeMenu = MENU_OFF;
 }
 
 void onEncoderButtonLongPress()
 {
-    activePage.clearPage();
-    previousActivePage = activePage;
-    if (activePage == SPLASH_PAGE)
-    {
-        activePage = SETTINGS_PAGE;
-        settingsPage.showPage();
+    if (activePage == SPLASH_PAGE){
+        switchActivePage(SETTINGS_PAGE);
         return;
     }
-    activePage = MENU_PAGE;
     menuPage.activeMenu = MAIN_MENU;
     menuPage.activeMenuItem = _main.selectedMode;
-    menuPage.showPage();
+    switchActivePage(MENU_PAGE);
 };
 
 void onButtonShortPress(uint8_t idx)
 {
     DEBUG_LOG_VALUE("Button short pressed: ", idx);
-    activePage.onButtonShortPress(idx);
+    if (!settings.isLocked) activePage.onButtonShortPress(idx);
 };
 
 void onButtonLongPress(uint8_t idx)
 {
-    activePage.buttonLongPress(idx);
+    if (!settings.isLocked) activePage.buttonLongPress(idx);
 };
 
 void press_button(uint8_t idx)
 {
     DEBUG_LOG_VALUE("Button pressed: ", idx);
     activePage.press_button(idx);
-    l[idx].show_white();
+    if(idx < NUM_LEDS){
+        if (!settings.isLocked) l[idx].show_white();
+        else l[idx].show_red();
+    }
     if (idx == 0) onLockButtonPress(); // Lock button
 };
 
 void release_button(uint8_t idx)
 {
     activePage.release_button(idx);
-    l[idx].show_color();
+    if(idx < NUM_LEDS) l[idx].show_color();
     if (idx == 0) onLockButtonRelease(); // Lock button
 };
 

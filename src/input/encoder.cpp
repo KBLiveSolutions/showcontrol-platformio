@@ -9,7 +9,7 @@ int rotB_pin = 23;
 
 // Rotary Encoder
 Rotary::Rotary(int num)
-    : encoder(rotA_pin, rotB_pin, RotaryEncoder::LatchMode::FOUR3) {
+    : encoder(rotA_pin, rotB_pin, RotaryEncoder::LatchMode::TWO03) {
     number = num;
 }
 

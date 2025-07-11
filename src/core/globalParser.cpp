@@ -6,17 +6,18 @@
 
 Global global;
 
+
 void Global::setLoopEnabled(bool enabled){
     loopEnabled = enabled;
     if (enabled) {
         if(activePage == pages[0]){
-            l[5].setColor(80, 0); // Set to yellow
+            pages[0].setRGBColor(5, 255, 240, 0); // Set to yellow
             l[5].show_color();
         }
         DEBUG_LOGLN("Loop enabled");
     } 
     else {
-            l[5].setColor(81, 0); // Set to yellow
+             pages[0].setRGBColor(5, 40, 30, 4); // Set to yellow
             l[5].show_color();
     }   
 };
@@ -71,12 +72,11 @@ void Global::setIsPlaying(bool playing){
         DEBUG_LOGLN("Playback stopped");
     }  
     if(activePage == pages[0]){
-        if (global.isPlaying) l[1].show_green();
-        else l[1].show_lightGreen();
-        }
-    l[2].r = 100;
-    l[2].g = 0;
-    l[2].b = 80;
-    l[2].show_color();
+        if (global.isPlaying) pages[0].setRGBColor(1, 0, 255, 0);
+        else pages[0].setRGBColor(1, 0, 40, 0);
+        l[1].show_color();
+        pages[0].setRGBColor(2, 100, 0, 80);
+        l[2].show_color();
+    }
 };
 
