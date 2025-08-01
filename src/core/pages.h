@@ -49,6 +49,9 @@ struct Page {
     bool getLuminance(int);
     void showPage();
     void clearPage();
+    void updatePlaySprite();
+    void updateLoopSprite();
+    void updateSongIndex();
 
     // Helper functions
     void handleSetlistButton(uint8_t buttonNum);

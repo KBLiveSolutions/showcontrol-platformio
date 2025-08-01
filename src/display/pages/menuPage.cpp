@@ -14,41 +14,51 @@ void MenuPage::showMenuEntry(const char* optionText, uint8_t i, uint8_t menuItem
         DEBUG_LOGLN("showMenuEntry: optionText is null");
         return;
     }
-    
-    if (i >= 6) {  // Assumant un maximum de 6 sprites de menu
+    if (i >= MAX_MENU_ITEMS) {
         DEBUG_LOG_VALUE("showMenuEntry: invalid sprite index: ", i);
         return;
     }
-    
-    // Validation des dimensions de sprite
     if (spriteW <= 0 || spriteH <= 0) {
         DEBUG_LOGLN("showMenuEntry: invalid sprite dimensions");
         return;
     }
-    
     int16_t padding = 5;
     uint8_t border = 0;
     uint16_t activeBGColor = _Green;
     uint16_t inactiveBGColor = _White;
     uint16_t color = inactiveBGColor;
     uint8_t spriteY = spriteH;
-    
+
     mainmenuSprites[i].setColorDepth(16);
     mainmenuSprites[i].createSprite(spriteW, spriteH);
     mainmenuSprites[i].setTextDatum(1);
     mainmenuSprites[i].setTextColor(_White, defaultBgColor);
     mainmenuSprites[i].loadFont(FONT20);
-    
+
     if (menuItemIndex == activeMenuItem) border = 3;
-    
-    // Protection contre les coordonnées négatives
     int rectX = max(padding, 0);
     int rectY = max(padding, 0);
     int rectW = max(spriteW - padding * 2 - 2, 1);
     int rectH = max(spriteH - padding * 2 - 2, 1);
-    
     mainmenuSprites[i].drawSmoothRoundRect(rectX, rectY, RADIUS, RADIUS-border, rectW, rectH, _White);
-    mainmenuSprites[i].drawString(optionText, spriteW / 2, 3 * padding, GFXFF);
+
+    // Coupe le texte si trop long pour le sprite et ajoute "..." si tronqué
+    char truncatedText[MAX_SONG_NAME+4];
+    strncpy(truncatedText, optionText, MAX_SONG_NAME+3);
+    truncatedText[MAX_SONG_NAME+3] = '\0';
+    int textWidth = mainmenuSprites[i].textWidth(truncatedText, GFXFF);
+    if (textWidth > spriteW - 2*padding) {
+        int len = strlen(truncatedText);
+        while (len > 0 && mainmenuSprites[i].textWidth(truncatedText, GFXFF) > spriteW - 2*padding - 20) {
+            len--;
+            truncatedText[len] = '\0';
+        }
+        if (len > 3) {
+            strncpy(&truncatedText[len-3], "...", 3);
+            truncatedText[len] = '\0';
+        }
+    }
+    mainmenuSprites[i].drawString(truncatedText, spriteW / 2, 3 * padding, GFXFF);
     mainmenuSprites[i].unloadFont();
     mainmenuSprites[i].pushSprite(WIDTH / 2 - spriteW / 2, spriteH * (i+1));
     mainmenuSprites[i].deleteSprite();
@@ -60,40 +70,62 @@ void MenuPage::updateMainMenu() {
         DEBUG_LOGLN("updateMainMenu: invalid activeMenuSize");
         return;
     }
-    
-    if (activeMenuSize > 5) {
-        if (activeMenuItem >= startIndex + 5) {
-            startIndex = activeMenuItem - 4;
+
+    // Calcul du startIndex pour le scroll
+    if (activeMenuSize > MAX_MENU_ITEMS) {
+        if (activeMenuItem >= startIndex + MAX_MENU_ITEMS) {
+            startIndex = activeMenuItem - (MAX_MENU_ITEMS - 1);
         } else if (activeMenuItem < startIndex) {
             startIndex = activeMenuItem;
         }
     } else {
         startIndex = 0;
     }
-    
-    // Protection contre startIndex invalide
-    if (startIndex < 0) {
-        DEBUG_LOGLN("updateMainMenu: negative startIndex, resetting to 0");
-        startIndex = 0;
+    if (startIndex < 0) startIndex = 0;
+    if (startIndex > activeMenuSize - MAX_MENU_ITEMS) startIndex = activeMenuSize - MAX_MENU_ITEMS;
+    if (startIndex < 0) startIndex = 0;
+
+    // Recopie les bons noms dans les buffers
+    for (uint8_t i = 0; i < MAX_MENU_ITEMS; i++) {
+        uint8_t menuItemIndex = startIndex + i;
+        if (menuItemIndex >= activeMenuSize) {
+            strncpy(menuItems[i], "", MAX_SONG_NAME-1);
+            menuItems[i][MAX_SONG_NAME-1] = '\0';
+            continue;
+        }
+        // Source dynamique selon le menu
+        const char* optionText = nullptr;
+        if (activeMenu == SONG_MENU) {
+            if (menuItemIndex < sizeof(_main.songsList)/sizeof(_main.songsList[0]) && _main.songsList[menuItemIndex]) {
+                optionText = _main.songsList[menuItemIndex];
+            } else {
+                snprintf(menuItems[i], MAX_SONG_NAME, "Song %d", menuItemIndex+1);
+                continue;
+            }
+        } else if (activeMenu == SETLIST_MENU) {
+            if (menuItemIndex < sizeof(_main.setlistsList)/sizeof(_main.setlistsList[0]) && _main.setlistsList[menuItemIndex]) {
+                optionText = _main.setlistsList[menuItemIndex];
+            } else {
+                snprintf(menuItems[i], MAX_SONG_NAME, "Setlist %d", menuItemIndex+1);
+                continue;
+            }
+        } else if (activeMenu == MAIN_MENU) {
+            if (menuItemIndex < sizeof(modesList)/sizeof(modesList[0]) && modesList[menuItemIndex]) {
+                optionText = modesList[menuItemIndex];
+            } else {
+                snprintf(menuItems[i], MAX_SONG_NAME, "Mode %d", menuItemIndex);
+                continue;
+            }
+        }
+        if (optionText) {
+            strncpy(menuItems[i], optionText, MAX_SONG_NAME-1);
+            menuItems[i][MAX_SONG_NAME-1] = '\0';
+        }
     }
 
-    for (uint8_t i = 0; i < activeMenuSize && i < 6; i++) {  // Limite de 6 sprites max
-        uint8_t menuItemIndex = startIndex + i;
-        if (menuItemIndex >= activeMenuSize) break;  // Protection contre out-of-bounds
-        
-        // Validation de l'accès au tableau menuItems
-        if (menuItemIndex >= sizeof(menuItems)/sizeof(menuItems[0])) {
-            DEBUG_LOG_VALUE("updateMainMenu: menuItemIndex out of bounds: ", menuItemIndex);
-            break;
-        }
-        
-        const char* optionText = menuItems[menuItemIndex];
-        if (!optionText) {
-            DEBUG_LOG_VALUE("updateMainMenu: null optionText at index: ", menuItemIndex);
-            optionText = "Error";
-        }
-        
-        showMenuEntry(optionText, i, menuItemIndex);
+    // Affichage des sprites
+    for (uint8_t i = 0; i < MAX_MENU_ITEMS; i++) {
+        showMenuEntry(menuItems[i], i, startIndex + i);
     }
 }
 
@@ -124,7 +156,6 @@ void MenuPage::showPage() {
     DEBUG_LOGLN("MenuPage::showPage() starting");
     
     int maxItems;  // Déclaration au début pour éviter les erreurs de scope
-    
     switch (activeMenu) {
         case MAIN_MENU:
         {
@@ -226,7 +257,8 @@ void MenuPage::showPage() {
             break;
         }
     }
-
+    
+    showCancelSprite(true);
     updateMainMenu();
     DEBUG_LOGLN("MenuPage::showPage() completed");
 }
@@ -251,22 +283,32 @@ void MenuPage::clearPage() {
         mainmenuSprites[i].pushSprite(pushX, pushY);
         mainmenuSprites[i].deleteSprite();
     }
-    
-    // Nettoyage sécurisé du bouton Cancel
-    CancelButtonSprite.createSprite(30, 30);
-    CancelButtonSprite.drawCircle(15, 15, 15, defaultBgColor);
-    CancelButtonSprite.drawCircle(15, 15, 14, defaultBgColor);
-    CancelButtonSprite.setTextColor(defaultBgColor, defaultBgColor);
-    CancelButtonSprite.loadFont(FONT12);
-    CancelButtonSprite.drawString("", 0, 0, GFXFF);
-    CancelButtonSprite.unloadFont();
-    
-    // Protection contre coordonnées négatives
-    int cancelX = max(20, 0);
-    int cancelY = max(HEIGHT / 2, 0);
-    
-    CancelButtonSprite.pushSprite(cancelX, cancelY);
-    CancelButtonSprite.deleteSprite();
-    
+    showCancelSprite(false);
     DEBUG_LOGLN("MenuPage::clearPage() completed");
+}
+
+void MenuPage::showCancelSprite(bool show) {
+    DEBUG_LOGLN("showCancelSprite: starting");
+    
+    
+    uint16_t color = show ? _LightGray : defaultBgColor;
+    // Nettoyage sécurisé du bouton Cancel
+    CancelButtonSprite->sprite.createSprite(CancelButtonSprite->width, CancelButtonSprite->height);
+    // CancelButtonSprite->sprite.fillSmoothRoundRect(0, 0, lockSprite->width, lockSprite->height, lockSprite->padding, show ? _Gray : defaultBgColor, TFT_BLACK);
+
+        // CancelButtonSprite->sprite.fillRect(bodyX, arcY- thickness, thickness, thickness, _Red);
+        // CancelButtonSprite->sprite.fillRect(bodyX + bodyW -thickness, arcY - thickness, thickness, thickness, _Red);
+        // // Base du cadenas (rectangle)
+        // CancelButtonSprite->sprite.fillRect(bodyX, bodyY, bodyW + 1, bodyH, _Red);
+    CancelButtonSprite->sprite.drawCircle(15, 15, 15, color);
+    CancelButtonSprite->sprite.drawCircle(15, 15, 14, color);
+    CancelButtonSprite->sprite.setTextColor(color, color);
+    CancelButtonSprite->sprite.loadFont(FONT12);
+    CancelButtonSprite->sprite.drawString(show ? "X" : "", 8, 6, GFXFF);
+    CancelButtonSprite->sprite.unloadFont();
+
+        CancelButtonSprite->sprite.pushSprite(CancelButtonSprite->positionX, CancelButtonSprite->positionY);
+        CancelButtonSprite->sprite.deleteSprite();
+    
+    DEBUG_LOGLN("showCancelSprite: completed");
 }

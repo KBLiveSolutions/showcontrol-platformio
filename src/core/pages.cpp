@@ -244,6 +244,9 @@ void Page::showPage() {
       showActiveSongName();
       showActiveSectionName();
       showNextSongName();
+      updateSongIndex();
+      updatePlaySprite();
+      updateLoopSprite();
     }
     else {
       DEBUG_LOGLN("Displaying USER page elements");
@@ -329,11 +332,16 @@ void Page::clearPage() {
       splashPage.clearPage();
       break;
     case SETLIST:{
+      mainPage.showMainSprite(" ", defaultBgColor);
+      mainPage.showSub1Sprite(" ", defaultBgColor);
+      mainPage.showSub2Sprite(" ", defaultBgColor);
       mainPage.showRemainingTimeInSet(false);
       mainPage.updateProgressBarFine(false);
       mainPage.showNextSprite(false);
       mainPage.showRemainingTimeInSong(false);
       mainPage.showSongsCounter(false);
+      mainPage.showPlaySprite(false, false);
+      mainPage.showLoopSprite(false, false);
       }
       break;
     case USER:{
@@ -346,7 +354,68 @@ void Page::clearPage() {
       break;
   }
 }
-  
+
+void Page::updateSongIndex(){
+  if(pageType == SETLIST){
+    mainPage.showSongsCounter(true);
+    if (_main.activeSongIndex == 0) {
+      // Première chanson : LED 3 éteinte (pas de précédent)
+      if (3 < NUM_LEDS && l) {
+        pages[0].setRGBColor(3, 0, 0, 0);
+        DEBUG_LOGLN("LED 3 OFF - First song");
+      }
+    } else {
+      // Pas la première chanson : LED 3 en blanc
+      if (3 < NUM_LEDS && l) {
+        pages[0].setRGBColor(3, 100, 100, 100);  // Blanc
+        DEBUG_LOGLN("LED 3 WHITE - Previous available");
+      }
+    }
+    
+    // LED 4 (index 5 dans le tableau l[]) - contrôle "suivant"
+    if (_main.activeSongIndex == _main.songsListSize - 1) {
+      // Dernière chanson : LED 4 éteinte (pas de suivant)
+      if (4 < NUM_LEDS && l) {
+        pages[0].setRGBColor(4, 0, 0, 0);
+        DEBUG_LOGLN("LED 4 OFF - Last song");
+      }
+    } else {
+      // Pas la dernière chanson : LED 4 en blanc
+      if (4 < NUM_LEDS && l) {
+        pages[0].setRGBColor(4, 100, 100, 100);   // Blanc
+        DEBUG_LOGLN("LED 4 WHITE - Next available");
+      }
+    }
+    l[3].show_color();
+    l[4].show_color();
+  }
+}
+void Page::updatePlaySprite() {
+  if (pageType == SETLIST) {
+    mainPage.showPlaySprite(global.isPlaying, true);
+    if (global.isPlaying) setRGBColor(1, 0, 255, 0);
+    else pages[0].setRGBColor(1, 0, 40, 0);
+    l[1].show_color();
+    setRGBColor(2, 20, 0, 80);
+    l[2].show_color();
+  }
+}
+
+void Page::updateLoopSprite() {
+  if (pageType == SETLIST) {
+    mainPage.showLoopSprite(global.loopEnabled, true);
+    if (global.loopEnabled) {
+      {
+        setRGBColor(5, 255, 240, 0); // Set to yellow
+        l[5].show_color();
+      }
+    } 
+    else {
+      setRGBColor(5, 40, 30, 4); // Set to yellow
+      l[5].show_color();
+    }   
+  }
+}
 // ====================================
 // LEDS
 // ====================================

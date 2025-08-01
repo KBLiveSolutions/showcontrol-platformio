@@ -34,18 +34,23 @@ int progressBarY = sub1Sprite->positionY  + sub1Sprite->height + 8;
 BasicSprite* progressBarSprite = new BasicSprite { TFT_eSprite(&display), 3, 0, progressBarY, 16, WIDTH };
 int timerBarY = progressBarY + 40;
 BasicSprite* timeSprite = new BasicSprite { TFT_eSprite(&display), 3, WIDTH/2 - 48, timerBarY, 32, 96, 8, 1 };
-BasicSprite* songsCountSprite = new BasicSprite { TFT_eSprite(&display), 3, WIDTH - 80, timerBarY, 32, 72, 8, 1 };
+BasicSprite* songsCountSprite = new BasicSprite { TFT_eSprite(&display), 3, WIDTH - 88, timerBarY, 32, 72, 8, 1 };
 BasicSprite* totalTimeSprite = new BasicSprite { TFT_eSprite(&display), 3, WIDTH - 80, timerBarY + 40, 32, 72, 8, 1 };
 
 int sub2SpriteY = progressBarSprite->positionY + progressBarSprite->height + 104;
 BasicSprite* nextSprite = new BasicSprite { TFT_eSprite(&display), 3, 20, sub2SpriteY, 32, 72, 8, 1 };
 BasicSprite* sub2Sprite = new BasicSprite { TFT_eSprite(&display), 3, WIDTH/4, sub2SpriteY, 32, WIDTH/2, 8, 1 };
+BasicSprite* playSprite = new BasicSprite { TFT_eSprite(&display), 3, WIDTH - 96, sub2SpriteY - 8, 48, 48, 8, 1};
+BasicSprite* loopSprite = new BasicSprite { TFT_eSprite(&display), 3, WIDTH - 56, sub2SpriteY - 8, 48, 48, 8, 1};
+
 BasicSprite* ethernetStatusSprite = new BasicSprite { TFT_eSprite(&display), 3, 0, sub2SpriteY, 32, WIDTH, 8, 0 };
 
 BasicSprite* keySprite = new BasicSprite { TFT_eSprite(&display), 2, 2, bottomSpriteHeight, topBarHeight, 70, 15, 4 };
-BasicSprite* infoSprite = new BasicSprite { TFT_eSprite(&display), 2, keySprite->width + 6, bottomSpriteHeight, topBarHeight, 280, 15, 4 };
+BasicSprite* infoSprite = new BasicSprite { TFT_eSprite(&display), 3, 16, timerBarY + 40, 32, WIDTH-32, 8, 1 };
 
-TFT_eSprite CancelButtonSprite =  TFT_eSprite(&display);
+BasicSprite* lockSprite = new BasicSprite { TFT_eSprite(&display), 3, 16, timerBarY, 32, 32, 8, 1 };
+
+BasicSprite*  CancelButtonSprite =  new BasicSprite { TFT_eSprite(&display), 3, 16, HEIGHT / 2 - 16, 32, 32, 8, 1 };
 
 TFT_eSprite mainmenuSprites[MAX_NUM_PAGES] = {
   TFT_eSprite(&display), TFT_eSprite(&display), TFT_eSprite(&display),
@@ -55,7 +60,6 @@ TFT_eSprite mainmenuSprites[MAX_NUM_PAGES] = {
 
 BasicSprite* mainUserSprite = new BasicSprite { TFT_eSprite(&display), 4, 0, topBarHeight + 72, 48, WIDTH, 0, 1};
 BasicSprite* sub1UserSprite = new BasicSprite { TFT_eSprite(&display), 3, 0, topBarHeight + 96 + 48, prePostHeight, WIDTH, 8, 1};
-
 ButtonSprite* userButtonSprite = new ButtonSprite {TFT_eSprite(&display), 3, 0, HEIGHT, HEIGHT / 6, WIDTH / 6, 0, 4};
 
 int itemWidth = 48;

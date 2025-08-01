@@ -5,6 +5,9 @@
 // Constantes et types
 #include "../../config/consts.h"
 
+#define MAX_MENU_ITEMS 5
+#define MAX_MENU_SPRITES 5
+
 // Variables globales
 class MenuPage {
     public:
@@ -17,6 +20,7 @@ class MenuPage {
         void changeSelectedItem(int );
         void showPage();
         void clearPage();
+        void showCancelSprite(bool show);
     private:
         uint8_t startIndex = 0;
         char modesList[7][MAX_SONG_NAME] = {"Setlist", "User 1", "User 2", "User 3", "User 4", "User 5", "Settings"};

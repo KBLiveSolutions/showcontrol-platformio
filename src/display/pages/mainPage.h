@@ -11,6 +11,8 @@ public:
     void showButtonSprite(bool , int , const char* , uint16_t , bool) ;
     void showMainUserSprite(const char* text, uint16_t txtColor);
     void showSub1UserSprite(const char* text, uint16_t txtColor);
+    void showInfoSprite(const char* text, uint16_t txtColor, bool);
+    void showLockSprite(bool show);
 
     // Prototypes des fonctions
     void showRemainingTimeInSet(bool);
@@ -18,6 +20,8 @@ public:
     void showNextSprite(bool );
     void showRemainingTimeInSong(bool);
     void showSongsCounter(bool);
+    void showPlaySprite(bool, bool);
+    void showLoopSprite(bool, bool);
 };
 
 const char* formatTime(float seconds);

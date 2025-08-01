@@ -1,4 +1,3 @@
-
 #include <Arduino.h>
 #include "../../config/consts.h"
 #include "../../core/utils.h"
@@ -34,6 +33,53 @@ void MainPage::showSub2Sprite(const char* text, uint16_t txtColor){
         return;
     }
     showSprite(text, txtColor, sub2Sprite);
+};
+
+void MainPage::showInfoSprite(const char* text, uint16_t txtColor, bool show) {
+    if (!text) {
+        DEBUG_LOGLN("showInfoSprite: null text pointer");
+        return;
+    }
+    if(show) showSpriteColor(text, txtColor, _Orange, infoSprite, true);
+    else showSpriteColor(" ", defaultBgColor, defaultBgColor, infoSprite, true);
+};
+
+void MainPage::showLockSprite(bool show) {
+    if (!lockSprite) {
+        DEBUG_LOGLN("showLockSprite: lockSprite is null");
+        return;
+    }
+    
+    if (show) {
+        lockSprite->sprite.createSprite(lockSprite->width, lockSprite->height);
+        lockSprite->sprite.fillSmoothRoundRect(0, 0, lockSprite->width, lockSprite->height, lockSprite->padding, _Gray, TFT_BLACK);
+
+        // Dessin du cadenas rouge
+        int thickness = 2;
+        int w = lockSprite->width;
+        int h = lockSprite->height;
+        int centerX = w / 2;
+        int centerY = h / 2;
+        int bodyW = w / 2;
+        int bodyH = h / 3;
+        int bodyX = centerX - bodyW / 2;
+        int bodyY = centerY;
+        int arcR = bodyW / 2;
+        int arcY = bodyY - thickness ; //- arcR + 2;
+        // Anse du cadenas (demi-cercle)
+        lockSprite->sprite.drawSmoothArc(centerX, arcY, arcR, arcR-thickness, 90, 270, _Red, _Gray);
+
+        lockSprite->sprite.fillRect(bodyX, arcY- thickness, thickness, thickness, _Red);
+        lockSprite->sprite.fillRect(bodyX + bodyW -thickness, arcY - thickness, thickness, thickness, _Red);
+        // Base du cadenas (rectangle)
+        lockSprite->sprite.fillRect(bodyX, bodyY, bodyW + 1, bodyH, _Red);
+
+
+        lockSprite->sprite.pushSprite(lockSprite->positionX, lockSprite->positionY);
+        lockSprite->sprite.deleteSprite();
+    } else {
+        showSprite("", defaultBgColor, lockSprite);
+    }
 };
 
 void MainPage::showMainUserSprite(const char* text, uint16_t txtColor){
@@ -306,4 +352,87 @@ void MainPage::showButtonSprite(bool buttonState, int num, const char* text, uin
 }
 
 
+void MainPage::showPlaySprite(bool _isPlaying,bool show) {
+    if(!show) {
+        showSpriteColor("", defaultBgColor, defaultBgColor, playSprite, false);
+        return;
+    }
+    
+    // Vérification du pointeur sprite
+    if (!playSprite) {
+        DEBUG_LOGLN("showPlaySprite: playSprite is null");
+        return;
+    }
+    
+    playSprite->sprite.createSprite(playSprite->width, playSprite->height);
+    if(_isPlaying) {
+        playSprite->sprite.fillRoundRect(0, 0, playSprite->width, playSprite->height, 4, _Black);
+        playSprite->sprite.fillTriangle(playSprite->width/2 - 10, playSprite->height/2 - 10,
+                                        playSprite->width/2 - 10, playSprite->height/2 + 10,
+                                        playSprite->width/2 + 10, playSprite->height/2, _Green);
+    } else {
+        // Affichage de l'icône de pause
+        playSprite->sprite.fillRoundRect(0, 0, playSprite->width, playSprite->height, 4, _Black);
+        playSprite->sprite.fillRect(playSprite->width/2 - 8, playSprite->height/2 - 12, 24, 24, _Purple);
+    }   
+    // playSprite->sprite.fillRoundRect(0, 0, playSprite->width, playSprite->height, 4, _Black);
+    
+    // Protection contre les coordonnées négatives
+    if (playSprite->positionX < 0 || playSprite->positionY < 0) {
+        DEBUG_LOGLN("showPlaySprite: invalid sprite position");
+        playSprite->sprite.deleteSprite();
+        return;
+    }
+    
+    playSprite->sprite.pushSprite(playSprite->positionX, playSprite->positionY);
+    playSprite->sprite.deleteSprite();
+}   
 
+void MainPage::showLoopSprite(bool _isLooping, bool show) {
+    if(!show) {
+        showSpriteColor("", defaultBgColor, defaultBgColor, loopSprite, false);
+        return;
+    }
+    if (!loopSprite) {
+        DEBUG_LOGLN("showLoopSprite: loopSprite is null");
+        return;
+    }
+    loopSprite->sprite.createSprite(loopSprite->width, loopSprite->height);
+    loopSprite->sprite.fillRoundRect(0, 0, loopSprite->width, loopSprite->height, 4, _Black);
+
+    int color = _isLooping ? _Yellow : _DarkGray ;
+    int thickness = 4;
+    int margin = 8;
+    int margin_v = 12;
+    int w = loopSprite->width;
+    int h = loopSprite->height;
+
+    // Dessin du rectangle "boucle" (forme carrée)
+    // 1. Trait haut
+    loopSprite->sprite.fillRect(margin, margin_v, w - 2*margin, thickness, color);
+    // 3. Trait bas
+    loopSprite->sprite.fillRect(margin, h - margin_v - thickness, w - 2*margin, thickness, color);
+    // 2. Trait droit
+    loopSprite->sprite.fillRect(w - margin - thickness, margin_v, thickness, h - 2*margin_v, color);
+    // 4. Trait gauche
+    loopSprite->sprite.fillRect(margin, margin_v, thickness, h - 2*margin_v - thickness, color);
+    // 5. Petit "pont" pour la flèche
+    int bridgeW = w/4;
+    int bridgeH = thickness;
+    loopSprite->sprite.fillRect(w/2 - bridgeW/2, h - margin_v - thickness, bridgeW, thickness, _Black);
+
+    // Triangle (pointe de flèche) en bas au centre
+    int triBase = thickness * 2;
+    int triHeight = thickness * 2;
+    int triX = w/2 + bridgeW/2;
+    int triY = h - margin_v - thickness/2;
+    loopSprite->sprite.fillTriangle(triX, triY + 2*thickness, triX , triY - 2*thickness, triX - 2*thickness, triY, color);
+
+    if (loopSprite->positionX < 0 || loopSprite->positionY < 0) {
+        DEBUG_LOGLN("showLoopSprite: invalid sprite position");
+        loopSprite->sprite.deleteSprite();
+        return;
+    }
+    loopSprite->sprite.pushSprite(loopSprite->positionX, loopSprite->positionY);
+    loopSprite->sprite.deleteSprite();
+}

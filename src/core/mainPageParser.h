@@ -23,7 +23,7 @@ class Main{
         int previousSeconds = 0;
         char itemToDisplay[12][MAX_SONG_NAME]; 
         char sections[MAX_SECTIONS][MAX_SONG_NAME], songsList[MAX_SONG][MAX_SONG_NAME] = {"Song 1", "Song 2", "Song 3", "Song 4", "Song 5", "Song 6", "Song 7", "Song 8"},
-        setlistsList[MAX_SONG][MAX_SONG_NAME] = {"Setlist 1", "Setlist 2", "Setlist 3", "Setlist 4", "Setlist 5", "Setlist 6", "Setlist 7", "Setlist 8"};
+        setlistsList[MAX_SETLIST][MAX_SONG_NAME] = {"Setlist 1", "Setlist 2", "Setlist 3", "Setlist 4", "Setlist 5", "Setlist 6", "Setlist 7", "Setlist 8"};
         char activeSetlistName[MAX_SONG_NAME] = "Setlist";
         int songDurations[MAX_SONG];
         float activeSongDuration;
@@ -63,6 +63,7 @@ class Main{
         void setSongDurations(int durations[], int count);
         void setSongColors(char colors[][MAX_SONG_NAME], int count);
         void setCCReceived(uint8_t channel,uint8_t control,uint8_t value);
+        void setInformationMessage(const char* message, bool);
 
         void configureButton(uint8_t user_mode, uint8_t controlNum, 
             uint8_t control_type, uint8_t control_cc, uint8_t control_ch, 

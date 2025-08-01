@@ -26,8 +26,8 @@
 #define PING_INTERVAL 2000
 #define MAX_SERVERS 8
 #define MAX_SONG_NAME 64
-#define MAX_MENU_ITEMS 10
 #define MAX_SONG 100
+#define MAX_SETLIST 10
 #define MAX_SECTIONS 20
 
 

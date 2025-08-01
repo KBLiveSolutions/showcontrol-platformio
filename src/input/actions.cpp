@@ -13,6 +13,7 @@
 #include "../display/pages/globalPage.h"
 #include "../display/pages/settingsPage.h"
 #include "../display/pages/splashPage.h"
+#include "../display/pages/mainPage.h"
 
 #include "../osc/OSCManager.h"
 #include "../midi/midi_out.h"
@@ -33,8 +34,12 @@ void onLockButtonPress()
     if (settings.isLocked){
         l[0].setRGBColor(255, 0, 0); // Show red color for locked state
         l[0].show_color();
+        mainPage.showLockSprite(true);
     }
-    else l[0].led_off();
+    else {
+        l[0].led_off();
+        mainPage.showLockSprite(false);
+    }
     shift = true;
 };
 
@@ -51,6 +56,10 @@ void onLockButtonRelease()
 };
 
 void onEncoderButtonPress(){
+    if(settings.isLocked) {
+        DEBUG_LOGLN("Encoder button pressed while locked");
+        return; // Ignore if settings are locked
+    }
     if(shift) debugOn = !debugOn;
     DEBUG_LOG_VALUE("Encoder button pressed, shift: ", shift);  
     switch (activePage.pageType){

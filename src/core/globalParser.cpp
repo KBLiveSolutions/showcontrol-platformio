@@ -9,18 +9,9 @@ Global global;
 
 void Global::setLoopEnabled(bool enabled){
     loopEnabled = enabled;
-    if (enabled) {
-        if(activePage == pages[0]){
-            pages[0].setRGBColor(5, 255, 240, 0); // Set to yellow
-            l[5].show_color();
-        }
-        DEBUG_LOGLN("Loop enabled");
-    } 
-    else {
-             pages[0].setRGBColor(5, 40, 30, 4); // Set to yellow
-            l[5].show_color();
-    }   
+    if(activePage == pages[0]) activePage.updateLoopSprite();
 };
+
 void Global::setLoopStart(float start){
     loopStart = start;
     DEBUG_LOG("Loop start set to: ");
@@ -66,17 +57,6 @@ void Global::setTempo(int newTempo){
 };
 void Global::setIsPlaying(bool playing){
     isPlaying = playing;
-    if (playing) {
-        DEBUG_LOGLN("Playback started");
-    } else {
-        DEBUG_LOGLN("Playback stopped");
-    }  
-    if(activePage == pages[0]){
-        if (global.isPlaying) pages[0].setRGBColor(1, 0, 255, 0);
-        else pages[0].setRGBColor(1, 0, 40, 0);
-        l[1].show_color();
-        pages[0].setRGBColor(2, 100, 0, 80);
-        l[2].show_color();
-    }
+    if(activePage == pages[0]) activePage.updatePlaySprite();
 };
 

@@ -12,14 +12,14 @@
 extern EthernetUDP showcontrolUdp;
 
 // NOUVELLES CONSTANTES GLOBALES pour faciliter la configuration
-#define UDP_TX_PACKET_MAX_SIZE 192
+#define UDP_TX_PACKET_MAX_SIZE 1024
+#define UDP_QUEUE_SIZE 64               // Taille de la queue UDP
 #define OSC_BUDGET_MS_RUNNING 30        // Budget de traitement OSC quand en marche (ms)
 #define OSC_BUDGET_MS_IDLE 10           // Budget de traitement OSC quand en attente (ms)
 #define MAX_PROCESS_PER_LOOP_RUNNING 32 // Nombre max de paquets à traiter quand en cours
 #define MAX_PROCESS_PER_LOOP_IDLE 16    // Nombre max de paquets à traiter quand en attente
 #define MAX_RECEIVE_PER_LOOP 64         // Nombre max de paquets à recevoir par boucle
 #define NETWORK_CHECK_INTERVAL 500      // Intervalle de vérification réseau (ms) - RÉDUIT: 750 -> 500
-#define UDP_QUEUE_SIZE 64               // Taille de la queue UDP
 #define SERVICE_TIMEOUT_MS 3000         // Timeout pour déconnecter un service (ms) - RÉDUIT: 5000 -> 3000
 #define SERVICE_CHECK_INTERVAL 250      // Intervalle de vérification des services (ms) - NOUVEAU
 #define SERVICE_PING_INTERVAL 1500      // Intervalle de ping des services (ms) - NOUVEAU

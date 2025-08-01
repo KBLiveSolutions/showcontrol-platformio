@@ -58,11 +58,60 @@ void Main::sendSongArrayRequest(){
 
 void Main::setActiveSongName(char* songName) {
   DEBUG_LOG_VALUE("onActiveSongName: ", songName);
-  
-  // Limitation à 20 caractères avec point de troncature
-  truncateStringWithDot(activeSongName, songName, 16);
-  
+
+  // Extraction du texte entre parenthèses
+  char infoMsg[32] = "";
+  char cleanName[64];
+  if (songName) {
+    const char* open = strchr(songName, '(');
+    const char* close = strchr(songName, ')');
+    if (open && close && close > open) {
+      size_t infoLen = close - open - 1;
+      if (infoLen > 0 && infoLen < sizeof(infoMsg)) {
+        strncpy(infoMsg, open + 1, infoLen);
+        infoMsg[infoLen] = '\0';
+        setInformationMessage(infoMsg, true);
+      }
+      // Copier le nom sans la partie entre ()
+      size_t prefixLen = open - songName;
+      strncpy(cleanName, songName, prefixLen);
+      cleanName[prefixLen] = '\0';
+      // Ajouter la partie après )
+      strncat(cleanName, close + 1, sizeof(cleanName) - strlen(cleanName) - 1);
+      // Nettoyer les espaces superflus
+      size_t len = strlen(cleanName);
+      while (len > 0 && (cleanName[len-1] == ' ' || cleanName[len-1] == '-')) {
+        cleanName[len-1] = '\0';
+        len--;
+      }
+      truncateStringWithDot(activeSongName, cleanName, 16);
+    } 
+    else {
+      truncateStringWithDot(activeSongName, songName, 16);
+      setInformationMessage("empty", false);
+    }
+  } else {
+    activeSongName[0] = '\0';
+  }
   activePage.showActiveSongName();
+
+  strcpy(activeSectionName, " ");
+  DEBUG_LOG_VALUE("onActiveSectionName: ", activeSectionName);
+  activePage.showActiveSectionName();
+}
+
+void Main::setInformationMessage(const char* message, bool show) {
+  if (!message || strlen(message) == 0) {
+    DEBUG_LOGLN("setInformationMessage: empty message");
+    return;
+  }
+  
+  // Limitation à 32 caractères
+  char infoMsg[32];
+  strncpy(infoMsg, message, sizeof(infoMsg) - 1);
+  infoMsg[sizeof(infoMsg) - 1] = '\0'; // Assurer la terminaison de chaîne
+  
+  mainPage.showInfoSprite(infoMsg, _White, show);
 }
 
 void Main::setActiveSongColor(uint16_t color) {
@@ -70,8 +119,10 @@ void Main::setActiveSongColor(uint16_t color) {
   DEBUG_LOG_VALUE("onActiveSongColor: ", activeSongColor);
   // activeSongColorShade = hexStringtoRGB565Shade(strBuf);
   activeSectionColor = activeSongColorShade;
-  mainPage.updateProgressBarFine(true);
-  mainPage.showRemainingTimeInSong(true);
+  if(activePage.pageType == SETLIST){
+    mainPage.updateProgressBarFine(true);
+    mainPage.showRemainingTimeInSong(true);
+  }
 }
 
 void Main::setActiveSongStart(float time) {
@@ -88,8 +139,6 @@ void Main::setActiveSongEnd(float time) {
 void Main::setActiveSongIndex(int index) {
   activeSongIndex = index;
   DEBUG_LOG_VALUE("activeSongIndex changed: ", activeSongIndex);
-  mainPage.showSongsCounter(true);
-
   // Validation des paramètres pour éviter les erreurs
   if (_main.songsListSize <= 0) {
     DEBUG_LOG_VALUE("setActiveSongIndex: invalid songsListSize: ", _main.songsListSize);
@@ -100,64 +149,50 @@ void Main::setActiveSongIndex(int index) {
     DEBUG_LOG_VALUE("setActiveSongIndex: invalid activeSongIndex: ", _main.activeSongIndex);
     return;
   }
-
+  activePage.updateSongIndex();
   // Contrôle des LEDs selon la position dans la liste
   // LED 3 (index 4 dans le tableau l[]) - contrôle "précédent"
-  if (_main.activeSongIndex == 0) {
-    // Première chanson : LED 3 éteinte (pas de précédent)
-    if (3 < NUM_LEDS && l) {
-      pages[0].setRGBColor(3, 0, 0, 0);
-      DEBUG_LOGLN("LED 3 OFF - First song");
-    }
-  } else {
-    // Pas la première chanson : LED 3 en blanc
-    if (3 < NUM_LEDS && l) {
-      pages[0].setRGBColor(3, 100, 100, 100);  // Blanc
-      DEBUG_LOGLN("LED 3 WHITE - Previous available");
-    }
-  }
-  
-  // LED 4 (index 5 dans le tableau l[]) - contrôle "suivant"
-  if (_main.activeSongIndex == _main.songsListSize - 1) {
-    // Dernière chanson : LED 4 éteinte (pas de suivant)
-    if (4 < NUM_LEDS && l) {
-      pages[0].setRGBColor(4, 0, 0, 0);
-      DEBUG_LOGLN("LED 4 OFF - Last song");
-    }
-  } else {
-    // Pas la dernière chanson : LED 4 en blanc
-    if (4 < NUM_LEDS && l) {
-      pages[0].setRGBColor(4, 100, 100, 100);   // Blanc
-      DEBUG_LOGLN("LED 4 WHITE - Next available");
-    }
-  }
-  l[3].show_color();
-  l[4].show_color();
 }
 
 void Main::setActiveSongDuration(float duration) {
   activeSongDuration = duration;
   DEBUG_LOG_VALUE("activeSongDuration changed: ", activeSongDuration);
-  mainPage.showRemainingTimeInSong(true);
+  if(activePage.pageType == SETLIST) {
+    mainPage.showRemainingTimeInSong(true);
+    mainPage.updateProgressBarFine(true);
+  }
 }
 
 void Main::setActiveSongProgress(float progress) {
-  songPercentage = progress;
-  mainPage.updateProgressBarFine(true);
+  // songPercentage = progress;
+  // if(activePage.pageType == SETLIST) {
+  //   mainPage.updateProgressBarFine(true);
+  // } 
 }
 
 void Main::setRemainingTimeInSet(float time) {
   remainingTimeInSet = time;
   DEBUG_LOG_VALUE("remainingTimeInSet changed: ", remainingTimeInSet);
-  mainPage.showRemainingTimeInSet(true);
+  if(activePage.pageType == SETLIST) mainPage.showRemainingTimeInSet(true);
 }
 
 void Main::setRemainingTimeInSong(float time) {
   remainingTimeInSong = time + 1;
   DEBUG_LOG_VALUE("remainingTimeInSong changed: ", remainingTimeInSong);
   currentSeconds = remainingTimeInSong;
+  // Calcul automatique de songPercentage
+  if (activeSongDuration > 0 && remainingTimeInSong >= 0) {
+    songPercentage = 1.0f - (remainingTimeInSong / activeSongDuration);
+    if (songPercentage < 0) songPercentage = 0;
+    if (songPercentage > 1) songPercentage = 1;
+  } else {
+    songPercentage = 0;
+  }
   if(currentSeconds != previousSeconds) {
-    mainPage.showRemainingTimeInSong(true);
+    if(activePage.pageType == SETLIST) mainPage.showRemainingTimeInSong(true);
+      if(activePage.pageType == SETLIST) {
+    mainPage.updateProgressBarFine(true);
+  } 
     previousSeconds = currentSeconds;
   }
 }
@@ -176,11 +211,17 @@ void Main::setNextSongColor(uint16_t color) {
 }
 
 void Main::setActiveSectionName(char* name) {
-  // Limitation à 20 caractères avec point de troncature
-  truncateStringWithDot(activeSectionName, name, 20);
-  
+  // Si name est vide, afficher >>>
+  if (!name || name[0] == '\0') {
+    strncpy(activeSectionName, ">>>", sizeof(activeSectionName) - 1);
+    activeSectionName[sizeof(activeSectionName) - 1] = '\0';
+  } else {
+    // Limitation à 20 caractères avec point de troncature
+    truncateStringWithDot(activeSectionName, name, 20);
+  }
   DEBUG_LOG_VALUE("onActiveSectionName: ", activeSectionName);
   activePage.showActiveSectionName();
+  songPercentage = 0.0f; // Réinitialisation du pourcentage de la chanson
 }
 
 void Main::setActiveSectionIndex(int index) {

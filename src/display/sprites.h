@@ -45,10 +45,13 @@ extern BasicSprite* sub2Sprite;
 extern BasicSprite* ethernetStatusSprite;
 extern BasicSprite* keySprite;
 extern BasicSprite* infoSprite;
-extern TFT_eSprite CancelButtonSprite;
+extern BasicSprite* playSprite;
+extern BasicSprite* loopSprite;
+extern BasicSprite* CancelButtonSprite;
 extern TFT_eSprite mainmenuSprites[MAX_NUM_PAGES];
 extern BasicSprite* mainUserSprite;
 extern BasicSprite* sub1UserSprite;
+extern BasicSprite* lockSprite;
 
 struct ButtonSprite {
   TFT_eSprite sprite;

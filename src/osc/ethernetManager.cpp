@@ -226,37 +226,29 @@ void EthernetManager::addService(ServiceType type, const IPAddress& ip, uint16_t
   DEBUG_LOG((type == ABLESETSRV) ? "Ableset" : "ShowControl");
   DEBUG_LOGLN(")");
   
-  // VÉRIFIER D'ABORD SI LE SERVICE EXISTE DÉJÀ
+  // Pour Ableset, toujours n'utiliser qu'un service par IP, port 39051
+  uint16_t servicePort = (type == ABLESETSRV) ? 39051 : port;
   for (int i = 0; i < totalServiceCount; i++) {
     if (discoveredServices[i].serviceType == type &&
-        discoveredServices[i].ip == ip) {
+        discoveredServices[i].ip == ip &&
+        discoveredServices[i].port == servicePort) {
       DEBUG_LOG("Service already exists: ");
       DEBUG_LOG(ip);
+      DEBUG_LOG(":");
+      DEBUG_LOG(servicePort);
       DEBUG_LOG(" (");
       DEBUG_LOG((type == ABLESETSRV) ? "Ableset" : "ShowControl");
       DEBUG_LOG(") - updating lastSeen");
-      
-      // Si le service existe déjà, ne pas changer le port
-      // (privilégier la découverte mDNS sur les heartbeats)
-      if (discoveredServices[i].port != port) {
-        DEBUG_LOG(" - keeping existing port ");
-        DEBUG_LOG(discoveredServices[i].port);
-        DEBUG_LOG(" instead of new port ");
-        DEBUG_LOG(port);
-      }
-      DEBUG_LOGLN("");
-      
       discoveredServices[i].lastSeen = millis();
+      DEBUG_LOGLN("");
       return; // Service déjà présent, ne pas ajouter
     }
   }
-  
   int index = getServiceTypeIndex(type);
   if (serviceCounts[index] < MAX_SERVICES && totalServiceCount < MAX_SERVICES * 2) {
-    unsigned long currentTime = millis(); // Une seule lecture de millis()
-
+    unsigned long currentTime = millis();
     discoveredServices[totalServiceCount].ip = ip;
-    discoveredServices[totalServiceCount].port = port;
+    discoveredServices[totalServiceCount].port = servicePort;
     discoveredServices[totalServiceCount].lastSeen = currentTime;
     discoveredServices[totalServiceCount].serviceType = type;
     discoveredServices[totalServiceCount].subscribed = false;
@@ -264,43 +256,22 @@ void EthernetManager::addService(ServiceType type, const IPAddress& ip, uint16_t
     totalServiceCount++;
 
     if (type == ABLESETSRV) {
-      DEBUG_LOG_VALUE("====>>> Ableset  connected port : ", port);
-      
-      // IMPORTANT: Les heartbeats d'Ableset viennent souvent d'un port éphémère
-      // mais Ableset écoute généralement sur le port 39051
-      // Si le port semble éphémère (> 50000), utiliser le port standard
-      uint16_t oscPort = port;
-      if (port > 50000) {
-        oscPort = 39051;  // Port standard d'Ableset
-        DEBUG_LOG("Heartbeat from ephemeral port ");
-        DEBUG_LOG(port);
-        DEBUG_LOG(", using standard OSC port ");
-        DEBUG_LOGLN(oscPort);
-        // Mettre à jour le port stocké
-        discoveredServices[totalServiceCount - 1].port = oscPort;
-      }
-      
+      DEBUG_LOG_VALUE("====>>> Ableset  connected port : ", servicePort);
       sendOSCAblesetSubscribe();
-      
-      // Note: getItStarted() sera appelé quand on recevra le message /subscribed
-      // Cela confirme que l'abonnement fonctionne correctement
       DEBUG_LOGLN("Ableset service added, waiting for /subscribed confirmation");
-    } 
-    else {
+    } else {
       DEBUG_LOG_VALUE("====>>> ShowControl connected port : ", port);
       sendOSCShowControl("/showcontrol/getValues");
     }
-    
-    // Mettre à jour l'affichage avec le nouveau nombre de services
+
     globalPage.showEthSprite(settings.MIDIConnected, serviceCounts[0]);
     DEBUG_LOG("Service added: totalServiceCount=");
     DEBUG_LOG(totalServiceCount);
     DEBUG_LOG(", serviceCounts[0]=");
     DEBUG_LOG(serviceCounts[0]);
     DEBUG_LOG(", serviceCounts[1]=");
-    DEBUG_LOGLN(serviceCounts[1]);
-    
-    // Debug: afficher la liste complète après ajout
+    DEBUG_LOG(serviceCounts[1]);
+    DEBUG_LOGLN("");
     listAllServices();
   } else {
     DEBUG_LOG("Cannot add service - limits reached: serviceCounts[");
@@ -376,15 +347,11 @@ void EthernetManager::checkForDisconnectedServices() {
 void EthernetManager::updateLastSeen(ServiceType type, IPAddress remoteIP) {
   unsigned long currentTime = millis();
   for (int i = 0; i < totalServiceCount; i++) {
-    if (discoveredServices[i].serviceType == type && 
-        discoveredServices[i].ip == remoteIP) {
+    if (discoveredServices[i].serviceType == type &&
+        discoveredServices[i].ip == remoteIP &&
+        (type != ABLESETSRV || discoveredServices[i].port == 39051)) {
       discoveredServices[i].lastSeen = currentTime;
-      // DEBUG_LOG("Updated lastSeen for service: ");
-      // DEBUG_LOG(remoteIP);
-      // DEBUG_LOG(" (");
-      // DEBUG_LOG((type == ABLESETSRV) ? "Ableset" : "ShowControl");
-      // DEBUG_LOGLN(")");
-      return; // Exit the function early
+      return;
     }
   }
 }
