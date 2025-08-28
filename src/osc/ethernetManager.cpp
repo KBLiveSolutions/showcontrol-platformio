@@ -14,8 +14,7 @@ EthernetManager ethernet;
 
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE];
 
-IPAddress     localIP(192, 168, 2, 10);
-IPAddress     manualIP(192, 168, 2, 10);
+IPAddress     manualIP(192, 101, 200, 71);
 IPAddress     myDns(192, 168, 1, 1);
 IPAddress     gateway(192, 168, 1, 1);
 IPAddress     subnet(255, 255, 0, 0);
@@ -395,11 +394,7 @@ void EthernetManager::setIp(int *ip) {
   if (setupEthernetDone) {
     DEBUG_LOGLN("Applying new IP to existing Ethernet connection");
     Ethernet.setLocalIP(manualIP);
-    
-    // Mettre à jour localIP pour que le callback serviceFoundCallback fonctionne correctement
-    localIP = Ethernet.localIP();
-    DEBUG_LOG("Updated localIP to: ");
-    DEBUG_LOGLN(localIP);
+  
     
     // Redémarrer UDP avec le nouveau port si nécessaire
     showcontrolUdp.stop();
@@ -499,7 +494,6 @@ int EthernetManager::getActiveServiceCount() {
 }
 
 void EthernetManager::setup() {
-// IPAddress     localIP(jsonManager.getIPNum(0), jsonManager.getIPNum(1), jsonManager.getIPNum(2), jsonManager.getIPNum(3));
 IPAddress manualIP(jsonManager.getIPNum(0), jsonManager.getIPNum(1), jsonManager.getIPNum(2), jsonManager.getIPNum(3));
   DEBUG_LOGLN("ETHERNET SETUP");
     // delay(1000);
@@ -525,8 +519,7 @@ IPAddress manualIP(jsonManager.getIPNum(0), jsonManager.getIPNum(1), jsonManager
       Ethernet.setLocalIP(manualIP);
       Ethernet.begin(mac, manualIP, myDns, gateway, subnet);
     }
-    localIP = Ethernet.localIP();
-    int buf[4] = {localIP[0], localIP[1], localIP[2], localIP[3]};
+    int buf[4] = {manualIP[0], manualIP[1], manualIP[2], manualIP[3]};
     // showcontrolUdp.begin(showcontrolLocalPort);
     if (showcontrolUdp.begin(showcontrolLocalPort)) {
   DEBUG_LOG("UDP started successfully on port : ");
@@ -589,10 +582,10 @@ void serviceFoundCallback(const char* type, MDNSServiceProtocol /*proto*/, const
     DEBUG_LOG(" on port: ");
     DEBUG_LOG(port);
     DEBUG_LOG(" (localIP: ");
-    DEBUG_LOG(localIP);
+    DEBUG_LOG(manualIP);
     DEBUG_LOGLN(")");
     
-    if(port > 100 && ipAddr[0] == localIP[0] && ipAddr[1] == localIP[1] && ipAddr[2] == localIP[2]){
+    if(port > 100 && ipAddr[0] == manualIP[0] && ipAddr[1] == manualIP[1] && ipAddr[2] == manualIP[2]){
       DEBUG_LOGLN("IP filter passed, processing service...");
       // Vérification directe du nom du service
       if(strcmp(name, "showcontrol") == 0) {

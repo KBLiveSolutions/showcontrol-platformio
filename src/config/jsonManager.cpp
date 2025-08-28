@@ -11,49 +11,111 @@ JSONManager::JSONManager(const char* fname) : filename(fname) {
 }
 
 bool JSONManager::begin() {
+    DEBUG_LOGLN("[JSONManager] Initializing LittleFS...");
     if (!LittleFS.begin()) {
-        Serial.println("Failed to mount LittleFS");
+        DEBUG_LOGLN("[JSONManager] ERROR: Failed to mount LittleFS");
         return false;
     }
+    DEBUG_LOGLN("[JSONManager] LittleFS mounted successfully");
     return true;
 }
 
 bool JSONManager::loadFile() {
+    DEBUG_LOG("[JSONManager] Loading file: ");
+    DEBUG_LOGLN(filename);
+    
     File file = LittleFS.open(filename, "r");
     if (!file) {
-        Serial.println("Failed to open file for reading");
+        DEBUG_LOGLN("[JSONManager] ERROR: Failed to open file for reading");
         return false;
     }
+    
+    size_t fileSize = file.size();
+    DEBUG_LOG("[JSONManager] File size: ");
+    DEBUG_LOG(fileSize);
+    DEBUG_LOGLN(" bytes");
+    
+    if (fileSize == 0) {
+        DEBUG_LOGLN("[JSONManager] WARNING: File is empty");
+        file.close();
+        return false;
+    }
+    
     DeserializationError error = deserializeJson(doc, file);
     file.close();
+    
     if (error) {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.f_str());
+        DEBUG_LOG("[JSONManager] ERROR: deserializeJson() failed: ");
+        DEBUG_LOGLN(error.f_str());
+        DEBUG_LOG("[JSONManager] Error code: ");
+        DEBUG_LOGLN(error.code());
         return false;
     }
+    
+    DEBUG_LOGLN("[JSONManager] JSON deserialized successfully");
+    DEBUG_LOG("[JSONManager] Document size: ");
+    DEBUG_LOGLN(doc.size());
+    
     options = doc["options"];
     userPagesArray = doc["userPages"];
+    
+    DEBUG_LOG("[JSONManager] Options found: ");
+    DEBUG_LOGLN(options.size());
+    DEBUG_LOG("[JSONManager] User pages found: ");
+    DEBUG_LOGLN(userPagesArray.size());
+    
     return true;
 }
 
 bool JSONManager::saveFile() {
+    DEBUG_LOG("[JSONManager] Saving file: ");
+    DEBUG_LOGLN(filename);
+    
     File file = LittleFS.open(filename, "w");
     if (!file) {
-        Serial.println("Failed to open file for writing");
+        DEBUG_LOGLN("[JSONManager] ERROR: Failed to open file for writing");
         return false;
     }
-    if (serializeJson(doc, file) == 0) {
-        Serial.println(F("Failed to write to file"));
-        file.close();
-        return false;
-    }
+    
+    size_t bytesWritten = serializeJson(doc, file);
     file.close();
+    
+    if (bytesWritten == 0) {
+        DEBUG_LOGLN("[JSONManager] ERROR: Failed to write to file");
+        return false;
+    }
+    
+    DEBUG_LOG("[JSONManager] File saved successfully, ");
+    DEBUG_LOG(bytesWritten);
+    DEBUG_LOGLN(" bytes written");
     return true;
 }
 
 bool JSONManager::writeJSONControl(int user_mode, int controlNum, int control_type, int control_cc, int control_ch, int isCustom, int toggled) {
-    if (!loadFile()) return false;
+    DEBUG_LOG("[JSONManager] Writing control - Mode:");
+    DEBUG_LOG(user_mode);
+    DEBUG_LOG(", Ctrl:");
+    DEBUG_LOG(controlNum);
+    DEBUG_LOG(", Type:");
+    DEBUG_LOG(control_type);
+    DEBUG_LOG(", CC:");
+    DEBUG_LOG(control_cc);
+    DEBUG_LOG(", Ch:");
+    DEBUG_LOGLN(control_ch);
+    
+    if (!loadFile()) {
+        DEBUG_LOGLN("[JSONManager] ERROR: Failed to load file before writing control");
+        return false;
+    }
+    
     JsonObject userPage = userPagesArray[user_mode];
+    if (userPage.isNull()) {
+        DEBUG_LOG("[JSONManager] ERROR: User page ");
+        DEBUG_LOG(user_mode);
+        DEBUG_LOGLN(" not found");
+        return false;
+    }
+    
     userPage["control_custom"][controlNum] = isCustom;
     userPage["control_type"][controlNum] = control_type;
     userPage["control_cc"][controlNum] = control_cc;
@@ -61,7 +123,14 @@ bool JSONManager::writeJSONControl(int user_mode, int controlNum, int control_ty
     userPage["control_toggle"][controlNum] = toggled;
     userPage["led_cc"][controlNum] = control_cc;
     userPage["led_ch"][controlNum] = control_ch;
-    return saveFile();
+    
+    bool result = saveFile();
+    if (result) {
+        DEBUG_LOGLN("[JSONManager] Control written successfully");
+    } else {
+        DEBUG_LOGLN("[JSONManager] ERROR: Failed to save control");
+    }
+    return result;
 }
 
 // bool JSONManager::writeJSONPedal(int user_mode, int controlNum, int control_type, int control_cc, int control_ch, int isCustom, int toggled) {
@@ -83,21 +152,40 @@ bool JSONManager::writeJSONDisplay(int user_mode, int display_num, int display_t
 }
 
 bool JSONManager::writeOption(const char* key, int value) {
-    if (!loadFile()) return false;
+    DEBUG_LOG("[JSONManager] Writing option - Key:'");
+    DEBUG_LOG(key);
+    DEBUG_LOG("', Value:");
+    DEBUG_LOGLN(value);
+    
+    if (!loadFile()) {
+        DEBUG_LOGLN("[JSONManager] ERROR: Failed to load file before writing option");
+        return false;
+    }
+    
     options[key] = value;
-    return saveFile();
+    
+    bool result = saveFile();
+    if (result) {
+        DEBUG_LOGLN("[JSONManager] Option written successfully");
+    } else {
+        DEBUG_LOGLN("[JSONManager] ERROR: Failed to save option");
+    }
+    return result;
 }
 
 bool JSONManager::writeManualIP(int* ip) {
     if (!loadFile()) {
-        Serial.println("Failed to load JSON file");
+        DEBUG_LOGLN("[JSONManager] Failed to load JSON file");
         return false;
     }
     for(int i=0; i<4; i++){
         options["manualIP"][i] = ip[i];
     }
-    Serial.print("Manual IP set to: ");
-    Serial.printf("%d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
+    DEBUG_LOG("[JSONManager] Manual IP set to: ");
+    DEBUG_LOG(ip[0]); DEBUG_LOG(".");
+    DEBUG_LOG(ip[1]); DEBUG_LOG(".");
+    DEBUG_LOG(ip[2]); DEBUG_LOG(".");
+    DEBUG_LOGLN(ip[3]);
     return saveFile();
 }
 
@@ -115,36 +203,49 @@ int JSONManager::getPort() const { return options["port"].as<int>(); }
 // }
 
 bool JSONManager::getPages() {
+    DEBUG_LOGLN("[JSONManager] Loading pages from JSON...");
+    
     for (size_t i = 1; i <= MAX_NUM_USERS; ++i) {
         JsonObject controlJson = userPagesArray[i];
+        if (controlJson.isNull()) {
+            DEBUG_LOG("[JSONManager] WARNING: Page ");
+            DEBUG_LOG(i);
+            DEBUG_LOGLN(" not found, skipping");
+            continue;
+        }
+        
+        DEBUG_LOG("[JSONManager] Processing page ");
+        DEBUG_LOGLN(i);
+        
         for (size_t j = 0; j < NUM_CONTROLS; ++j) {
             control_type_t type = controlJson["control_type"][j].as<control_type_t>();
             int custom = controlJson["control_custom"][j].as<int>();
             int cc = controlJson["control_cc"][j].as<int>();
             int channel = controlJson["control_ch"][j].as<int>();
             int toggled = controlJson["control_toggle"][j].as<int>();
+            
             pages[i].setButtonControl(j, type, cc, channel, custom, toggled);
+            
             cc = controlJson["led_cc"][j].as<int>();
             channel = controlJson["led_ch"][j].as<int>();
             pages[i].setLedControl(j, type, cc, channel);
         }
+        
         JsonArray displayArray = controlJson["display"];
-        // for (size_t j = 0; j < 2; ++j) {
-        //     pages[i].setDisplay(j, displayArray[j]);
-        //     control_type_t type = controlJson["pedal_type"][j].as<control_type_t>();
-        //     int custom = controlJson["pedal_custom"][j].as<int>();
-        //     int cc = controlJson["pedal_cc"][j].as<int>();
-        //     int channel = controlJson["pedal_ch"][j].as<int>();
-        //     int toggled = controlJson["pedal_toggle"][j].as<int>();
-        //     pages[i].setPedal(j, type, cc, channel, custom, toggled);
-        // }
+        DEBUG_LOG("[JSONManager] Page ");
+        DEBUG_LOG(i);
+        DEBUG_LOG(" loaded with ");
+        DEBUG_LOG(displayArray.size());
+        DEBUG_LOGLN(" display elements");
     }
+    
+    DEBUG_LOGLN("[JSONManager] All pages loaded successfully");
     return true;
 }
 
 void JSONManager::sendJSONConfig() {
-    if (!doc.containsKey("options")) {
-        Serial.println("Options not found in JSON document");
+    if (!doc["options"].is<JsonObject>()) {
+        DEBUG_LOGLN("[JSONManager] Options not found in JSON document");
         return;
     }
     JsonDocument optionsDoc;
@@ -154,8 +255,8 @@ void JSONManager::sendJSONConfig() {
 }
 
 void JSONManager::sendJSONConfigOSC() {
-    if (!doc.containsKey("options")) {
-        Serial.println("Options not found in JSON document");
+    if (!doc["options"].is<JsonObject>()) {
+        DEBUG_LOGLN("[JSONManager] Options not found in JSON document");
         return;
     }
     JsonDocument optionsDoc;
@@ -184,41 +285,79 @@ void JSONManager::sendJSONPageOSC(int pageNum) {
 }
 
 void JSONManager::setup() {
-    Serial.println(F("Inizializing FS..."));
+    DEBUG_LOGLN("[JSONManager] === JSONManager Setup Starting ===");
+    DEBUG_LOGLN("[JSONManager] Initializing filesystem...");
+    
     if (LittleFS.begin()) {
-        Serial.println(F("done."));
+        DEBUG_LOGLN("[JSONManager] Filesystem initialized successfully");
     } else {
-        Serial.println(F("fail."));
-    }
-    if (!LittleFS.begin()) {
-        Serial.println("Failed to mount LittleFS");
+        DEBUG_LOGLN("[JSONManager] ERROR: Filesystem initialization failed");
         return;
     }
-    if (!jsonManager.begin()) return;
-    if (!jsonManager.loadFile()) return;
-
+    
+    if (!LittleFS.begin()) {
+        DEBUG_LOGLN("[JSONManager] ERROR: Failed to mount LittleFS on second attempt");
+        return;
+    }
+    
+    // Afficher les fichiers présents
+    debugListFiles();
+    
+    DEBUG_LOGLN("[JSONManager] Beginning JSONManager...");
+    if (!jsonManager.begin()) {
+        DEBUG_LOGLN("[JSONManager] ERROR: JSONManager begin() failed");
+        return;
+    }
+    
+    DEBUG_LOGLN("[JSONManager] Loading configuration file...");
+    if (!jsonManager.loadFile()) {
+        DEBUG_LOGLN("[JSONManager] ERROR: Failed to load configuration file");
+        // Afficher le contenu brut du fichier pour diagnostic
+        debugPrintJSON();
+        return;
+    }
+    
+    DEBUG_LOGLN("[JSONManager] Reading configuration values...");
     ethernet.useDHCP = jsonManager.getUseDHCP();
+    DEBUG_LOG("[JSONManager] DHCP enabled: ");
+    DEBUG_LOGLN(ethernet.useDHCP ? "true" : "false");
+    
     settings.nightMode = jsonManager.getNightMode();
+    DEBUG_LOG("[JSONManager] Night mode: ");
+    DEBUG_LOGLN(settings.nightMode ? "true" : "false");
+    
     _main.selectedMode = jsonManager.getSelectedMode();
+    DEBUG_LOG("[JSONManager] Selected mode: ");
+    DEBUG_LOGLN(_main.selectedMode);
+    
     settings.userPagesAmount = jsonManager.getUserPagesAmount();
-    Serial.print("Selected mode: ");
-    Serial.println(_main.selectedMode);
-    Serial.print("User pages amount: ");
-    Serial.println(settings.userPagesAmount);
+    DEBUG_LOG("[JSONManager] User pages amount: ");
+    DEBUG_LOGLN(settings.userPagesAmount);
+    
     showcontrolLocalPort = jsonManager.getPort();
+    DEBUG_LOG("[JSONManager] OSC Port: ");
+    DEBUG_LOGLN(showcontrolLocalPort);
+    
     settings.ledBrightness = jsonManager.getLedBrightness();
+    DEBUG_LOG("[JSONManager] LED brightness: ");
+    DEBUG_LOGLN(settings.ledBrightness);
+    
     settings.displayBrightness = jsonManager.getDisplayBrightness();
-    // pedal[0] = jsonManager.getPedal(0);
-    // pedal[1] = jsonManager.getPedal(1);
-
+    DEBUG_LOG("[JSONManager] Display brightness: ");
+    DEBUG_LOGLN(settings.displayBrightness);
+    
     IPAddress ipAdr(jsonManager.getIPNum(0), jsonManager.getIPNum(1), jsonManager.getIPNum(2), jsonManager.getIPNum(3));
     manualIP = ipAdr;
-    Serial.print("stored ip: ");
-    Serial.print(manualIP[0]); Serial.print(".");
-    Serial.print(manualIP[1]); Serial.print(".");
-    Serial.print(manualIP[2]); Serial.print(".");
-    Serial.print(manualIP[3]); Serial.println();
+    DEBUG_LOG("[JSONManager] Manual IP: ");
+    DEBUG_LOG(manualIP[0]); DEBUG_LOG(".");
+    DEBUG_LOG(manualIP[1]); DEBUG_LOG(".");
+    DEBUG_LOG(manualIP[2]); DEBUG_LOG(".");
+    DEBUG_LOGLN(manualIP[3]);
+    
+    DEBUG_LOGLN("[JSONManager] Loading user pages...");
     jsonManager.getPages();
+    
+    DEBUG_LOGLN("[JSONManager] === JSONManager Setup Complete ===");
 }
 
 
@@ -251,5 +390,56 @@ void extractIPAddress(String input) {
         }
     }
     ethernet.setIp(ip);
+}
+
+// Fonction de débogage pour lister les fichiers
+void JSONManager::debugListFiles() {
+    DEBUG_LOGLN("[JSONManager] === LittleFS File List ===");
+    
+    Dir root = LittleFS.openDir("/");
+    int fileCount = 0;
+    size_t totalSize = 0;
+    
+    while (root.next()) {
+        File file = root.openFile("r");
+        if (file) {
+            size_t size = file.size();
+            DEBUG_LOG("[JSONManager] FILE: ");
+            DEBUG_LOG(root.fileName().c_str());
+            DEBUG_LOG(" (");
+            DEBUG_LOG(size);
+            DEBUG_LOGLN(" bytes)");
+            totalSize += size;
+            fileCount++;
+            file.close();
+        }
+    }
+    
+    // Informations basiques
+    DEBUG_LOG("[JSONManager] Total files: ");
+    DEBUG_LOGLN(fileCount);
+    DEBUG_LOG("[JSONManager] Total file size: ");
+    DEBUG_LOG(totalSize);
+    DEBUG_LOGLN(" bytes");
+    DEBUG_LOGLN("[JSONManager] === End File List ===");
+}
+
+// Fonction de débogage pour afficher le contenu brut du JSON
+void JSONManager::debugPrintJSON() {
+    DEBUG_LOGLN("[JSONManager] === Raw JSON Content ===");
+    
+    File file = LittleFS.open(filename, "r");
+    if (!file) {
+        DEBUG_LOGLN("[JSONManager] ERROR: Cannot open JSON file for debug reading");
+        return;
+    }
+    
+    DEBUG_LOGLN("[JSONManager] JSON File Content:");
+    while (file.available()) {
+        DEBUG_LOG((char)file.read());
+    }
+    file.close();
+    
+    DEBUG_LOGLN("\n[JSONManager] === End Raw JSON ===");
 }
 

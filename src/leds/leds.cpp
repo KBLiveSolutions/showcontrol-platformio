@@ -70,7 +70,7 @@ void Led::showPixel(uint8_t r, uint8_t g, uint8_t b) {
       pixels[index] = CRGB(adjustedR, adjustedG, adjustedB);
 
     }
-    FastLED.show();
+    // FastLED.show(); // DÉSACTIVÉ pour test USB Host
   }
 }
 
@@ -124,12 +124,22 @@ void Led::led_off() {
 
 
 void leds::setup() {
+  Serial.println("Starting LED initialization...");
+  Serial.flush();
+  
+  Serial.println("Initializing LED objects...");
+  Serial.flush();
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     l[i].begin();
   }
+  Serial.println("LED objects initialized");
+  Serial.flush();
+  
+  // Réactivation FastLED
   FastLED.addLeds<NEOPIXEL, LED_PIN>(pixels, NUMPIXELS); 
-  Serial.println("Setup LEDs done");
-    FastLED.show();
+  FastLED.show();
+  Serial.println("Setup LEDs done (FastLED réactivé)");
+  Serial.flush();
 }
 
 void leds::clearLeds() {

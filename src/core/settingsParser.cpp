@@ -20,26 +20,6 @@ void Settings::storeActivePage(uint8_t pageNum){};
 void Settings::parseDisplayItem(uint8_t itemType, char* strBuf, int arg2){};
 
 void Settings::getItStarted(){
-      DEBUG_LOGLN("getItStarted called");
-      
-      // Si déjà en cours d'exécution, ne pas relancer tout le processus
-      // if (isRunning) {
-      //   DEBUG_LOGLN("Application already running, skipping full initialization");
-      //   DEBUG_LOG("Current activePage.pageType: ");
-      //   DEBUG_LOGLN(activePage.pageType);
-      //   // Mais on peut quand même faire quelques actions légères
-      //   if (activePage.pageType == SPLASH) {
-      //     // Si on est encore sur la splash page, changer vers la page principale
-      //     if (_main.selectedMode < 6 && pages[_main.selectedMode].pageType != NONE) {
-      //       switchActivePage(pages[_main.selectedMode]);
-      //       DEBUG_LOGLN("Switched from splash to main page");
-      //     }
-      //   } else {
-      //     DEBUG_LOGLN("Not on splash page, no page switch needed");
-      //   }
-      //   return;
-      // }
-      
       DEBUG_LOGLN("Starting getItStarted sequence...");
       isRunning = true;  // Marquer comme en cours d'exécution
       
@@ -341,12 +321,13 @@ void Settings::setup(){
   userPagesAmount = jsonManager.getUserPagesAmount();
   
   // Validation et limite de sécurité
-  if (userPagesAmount < 1) {
-    DEBUG_LOGLN("Invalid userPagesAmount from JSON, setting to default (1)");
-    userPagesAmount = 1;
-  } else if (userPagesAmount > 10) {
+  // if (userPagesAmount < 1) {
+  //   DEBUG_LOGLN("Invalid userPagesAmount from JSON, setting to default (1)");
+  //   userPagesAmount = 1;
+  // } else 
+  if (userPagesAmount > 5) {
     DEBUG_LOGLN("userPagesAmount too high, limiting to 10");
-    userPagesAmount = 10;
+    userPagesAmount = 5;
   }
   
   DEBUG_LOG_VALUE("Settings initialized with userPagesAmount: ", userPagesAmount);

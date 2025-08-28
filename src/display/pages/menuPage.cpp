@@ -64,98 +64,11 @@ void MenuPage::showMenuEntry(const char* optionText, uint8_t i, uint8_t menuItem
     mainmenuSprites[i].deleteSprite();
 }
 
-void MenuPage::updateMainMenu() {
-    // Validation de activeMenuSize
-    if (activeMenuSize <= 0) {
-        DEBUG_LOGLN("updateMainMenu: invalid activeMenuSize");
-        return;
-    }
-
-    // Calcul du startIndex pour le scroll
-    if (activeMenuSize > MAX_MENU_ITEMS) {
-        if (activeMenuItem >= startIndex + MAX_MENU_ITEMS) {
-            startIndex = activeMenuItem - (MAX_MENU_ITEMS - 1);
-        } else if (activeMenuItem < startIndex) {
-            startIndex = activeMenuItem;
-        }
-    } else {
-        startIndex = 0;
-    }
-    if (startIndex < 0) startIndex = 0;
-    if (startIndex > activeMenuSize - MAX_MENU_ITEMS) startIndex = activeMenuSize - MAX_MENU_ITEMS;
-    if (startIndex < 0) startIndex = 0;
-
-    // Recopie les bons noms dans les buffers
-    for (uint8_t i = 0; i < MAX_MENU_ITEMS; i++) {
-        uint8_t menuItemIndex = startIndex + i;
-        if (menuItemIndex >= activeMenuSize) {
-            strncpy(menuItems[i], "", MAX_SONG_NAME-1);
-            menuItems[i][MAX_SONG_NAME-1] = '\0';
-            continue;
-        }
-        // Source dynamique selon le menu
-        const char* optionText = nullptr;
-        if (activeMenu == SONG_MENU) {
-            if (menuItemIndex < sizeof(_main.songsList)/sizeof(_main.songsList[0]) && _main.songsList[menuItemIndex]) {
-                optionText = _main.songsList[menuItemIndex];
-            } else {
-                snprintf(menuItems[i], MAX_SONG_NAME, "Song %d", menuItemIndex+1);
-                continue;
-            }
-        } else if (activeMenu == SETLIST_MENU) {
-            if (menuItemIndex < sizeof(_main.setlistsList)/sizeof(_main.setlistsList[0]) && _main.setlistsList[menuItemIndex]) {
-                optionText = _main.setlistsList[menuItemIndex];
-            } else {
-                snprintf(menuItems[i], MAX_SONG_NAME, "Setlist %d", menuItemIndex+1);
-                continue;
-            }
-        } else if (activeMenu == MAIN_MENU) {
-            if (menuItemIndex < sizeof(modesList)/sizeof(modesList[0]) && modesList[menuItemIndex]) {
-                optionText = modesList[menuItemIndex];
-            } else {
-                snprintf(menuItems[i], MAX_SONG_NAME, "Mode %d", menuItemIndex);
-                continue;
-            }
-        }
-        if (optionText) {
-            strncpy(menuItems[i], optionText, MAX_SONG_NAME-1);
-            menuItems[i][MAX_SONG_NAME-1] = '\0';
-        }
-    }
-
-    // Affichage des sprites
-    for (uint8_t i = 0; i < MAX_MENU_ITEMS; i++) {
-        showMenuEntry(menuItems[i], i, startIndex + i);
-    }
-}
-
-void MenuPage::changeSelectedItem(int value){
-    // Validation de la valeur d'entrée
-    if (value < -100 || value > 100) {
-        DEBUG_LOG_VALUE("changeSelectedItem: extreme value capped: ", value);
-        value = (value < 0) ? -1 : 1;
-    }
-    
-    int prevActiveMenuItem = activeMenuItem;
-    activeMenuItem = activeMenuItem + value;
-    activeMenuItem = max(activeMenuItem, 0);
-    
-    // Protection contre activeMenuSize invalide
-    if (activeMenuSize <= 0) {
-        DEBUG_LOGLN("changeSelectedItem: invalid activeMenuSize");
-        activeMenuItem = 0;
-    } else {
-        activeMenuItem = min(activeMenuItem, activeMenuSize - 1);  // Correction: -1 pour index valide
-    }
-    
-    DEBUG_LOG_VALUE("Active menu item: ", activeMenuItem);
-    if (prevActiveMenuItem != activeMenuItem) updateMainMenu();
-}
 
 void MenuPage::showPage() {
     DEBUG_LOGLN("MenuPage::showPage() starting");
     
-    int maxItems;  // Déclaration au début pour éviter les erreurs de scope
+    maxItems = 0;  // Déclaration au début pour éviter les erreurs de scope
     switch (activeMenu) {
         case MAIN_MENU:
         {
@@ -164,36 +77,33 @@ void MenuPage::showPage() {
                 DEBUG_LOG_VALUE("showPage: invalid userPagesAmount, capping: ", settings.userPagesAmount);
                 settings.userPagesAmount = max(0, min(settings.userPagesAmount, 8));
             }
-            
+
+            activeMenuItem = 0;
+            startIndex = 0;
             activeMenuSize = settings.userPagesAmount + 2;
             DEBUG_LOG_VALUE("Active menu size: ", activeMenuSize);
-            
-            // Protection contre débordement du tableau menuItems
-            maxItems = min(activeMenuSize, (int)(sizeof(menuItems)/sizeof(menuItems[0])));
-            
-            for (uint8_t i = 0; i < maxItems - 1; i++) {
+            maxItems = min(activeMenuSize, MAX_MENU_ITEMS);
+
+            for (uint8_t i = 0; i < maxItems; i++) {
                 if (i == 0) {
                     strncpy(menuItems[i], "Setlist", sizeof(menuItems[i]) - 1);
                     menuItems[i][sizeof(menuItems[i]) - 1] = '\0';
-                    // TO DO: check if AbleSet is available
-                    // if (ethernet.serviceCounts[0] > 0)  strcpy(menuItems[i], "AbleSet");
-                    // else  strcpy(menuItems[i], "Setlist");
+                } 
+                else if (i == maxItems - 1) {
+                    strncpy(menuItems[i], "Settings", sizeof(menuItems[i]) - 1);
+                    menuItems[i][sizeof(menuItems[i]) - 1] = '\0';
                 } 
                 else {
-                    // Protection contre l'accès hors limites de modesList
-                    if (i < sizeof(modesList)/sizeof(modesList[0]) && modesList[i]) {
-                        strncpy(menuItems[i], modesList[i], sizeof(menuItems[i]) - 1);
-                        menuItems[i][sizeof(menuItems[i]) - 1] = '\0';
-                    } else {
-                        DEBUG_LOG_VALUE("showPage: modesList index out of bounds: ", i);
-                        snprintf(menuItems[i], sizeof(menuItems[i]), "Mode %d", i);
-                    }
+                    uint8_t modeIdx = i - 1;
+                    // if (modeIdx < sizeof(modesList)/sizeof(modesList[0]) && modesList[modeIdx]) {
+                    //     strncpy(menuItems[i], modesList[i], sizeof(menuItems[i]) - 1);
+                    //     menuItems[i][sizeof(menuItems[i]) - 1] = '\0';
+                    // } 
+                    // else {
+                        DEBUG_LOG_VALUE("showPage: modesList index out of bounds: ", modeIdx);
+                        snprintf(menuItems[i], sizeof(menuItems[i]), "User %d", modeIdx);
+                    // }
                 }
-            }
-            
-            if (maxItems > 0) {
-                strncpy(menuItems[maxItems-1], "Settings", sizeof(menuItems[maxItems-1]) - 1);
-                menuItems[maxItems-1][sizeof(menuItems[maxItems-1]) - 1] = '\0';
             }
             break;
         }
@@ -262,6 +172,110 @@ void MenuPage::showPage() {
     updateMainMenu();
     DEBUG_LOGLN("MenuPage::showPage() completed");
 }
+
+void MenuPage::updateMainMenu() {
+    // Validation de activeMenuSize
+    if (activeMenuSize <= 0) {
+        DEBUG_LOGLN("updateMainMenu: invalid activeMenuSize");
+        return;
+    }
+
+    // Calcul du startIndex pour le scroll
+
+
+    // Recopie les bons noms dans les buffers
+    for (uint8_t i = 0; i < maxItems; i++) {
+        uint8_t menuItemIndex = startIndex + i;
+        if (menuItemIndex >= activeMenuSize) {
+            strncpy(menuItems[i], "", MAX_SONG_NAME-1);
+            menuItems[i][MAX_SONG_NAME-1] = '\0';
+            continue;
+        }
+        const char* optionText = nullptr;
+        switch (activeMenu) {
+            case MAIN_MENU:
+                if (menuItemIndex == 0) {
+                    optionText = "Setlist";
+                } else if (menuItemIndex == activeMenuSize - 1) {
+                    optionText = "Settings";
+                } else {
+                    // uint8_t modeIdx = menuItemIndex - 1;
+                    // if (modeIdx < sizeof(modesList)/sizeof(modesList[0]) && modesList[menuItemIndex]) {
+                    //     optionText = modesList[modeIdx];
+                    // } else {
+                        snprintf(menuItems[i], MAX_SONG_NAME, "User %d", menuItemIndex);
+                        optionText = menuItems[i];
+                    // }
+                }
+                break;
+            case SONG_MENU:
+                if (activeMenuSize > MAX_MENU_ITEMS) {
+                    if (activeMenuItem >= startIndex + MAX_MENU_ITEMS) {
+                        startIndex = activeMenuItem - (MAX_MENU_ITEMS - 1);
+                    } else if (activeMenuItem < startIndex) {
+                        startIndex = activeMenuItem;
+                    }
+                    } 
+                    else {
+                        startIndex = 0;
+                    }
+                if (startIndex > activeMenuSize - MAX_MENU_ITEMS) startIndex = activeMenuSize - MAX_MENU_ITEMS;
+                if (startIndex < 0) startIndex = 0;
+                if (menuItemIndex < sizeof(_main.songsList)/sizeof(_main.songsList[0]) && _main.songsList[menuItemIndex]) {
+                    optionText = _main.songsList[menuItemIndex];
+                } 
+                else {
+                    snprintf(menuItems[i], MAX_SONG_NAME, "Song %d", menuItemIndex+1);
+                    continue;
+                }
+                break;
+            case SETLIST_MENU:
+                if (menuItemIndex < sizeof(_main.setlistsList)/sizeof(_main.setlistsList[0]) && _main.setlistsList[menuItemIndex]) {
+                    optionText = _main.setlistsList[menuItemIndex];
+                } else {
+                    snprintf(menuItems[i], MAX_SONG_NAME, "Setlist %d", menuItemIndex+1);
+                    continue;
+                }
+                break;
+            default:
+                optionText = "";
+                break;
+        }
+        if (optionText) {
+            strncpy(menuItems[i], optionText, MAX_SONG_NAME-1);
+            menuItems[i][MAX_SONG_NAME-1] = '\0';
+        }
+    }
+
+    // Affichage des sprites
+    for (uint8_t i = 0; i < maxItems; i++) {
+        showMenuEntry(menuItems[i], i, startIndex + i);
+    }
+}
+
+void MenuPage::changeSelectedItem(int value){
+    // Validation de la valeur d'entrée
+    if (value < -100 || value > 100) {
+        DEBUG_LOG_VALUE("changeSelectedItem: extreme value capped: ", value);
+        value = (value < 0) ? -1 : 1;
+    }
+    
+    int prevActiveMenuItem = activeMenuItem;
+    activeMenuItem = activeMenuItem + value;
+    activeMenuItem = max(activeMenuItem, 0);
+    
+    // Protection contre activeMenuSize invalide
+    if (activeMenuSize <= 0) {
+        DEBUG_LOGLN("changeSelectedItem: invalid activeMenuSize");
+        activeMenuItem = 0;
+    } else {
+        activeMenuItem = min(activeMenuItem, activeMenuSize - 1);  // Correction: -1 pour index valide
+    }
+    
+    DEBUG_LOG_VALUE("Active menu item: ", activeMenuItem);
+    if (prevActiveMenuItem != activeMenuItem) updateMainMenu();
+}
+
 
 void MenuPage::clearPage() {
     DEBUG_LOGLN("MenuPage::clearPage() starting");

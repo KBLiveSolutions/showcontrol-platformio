@@ -1,6 +1,7 @@
 #pragma once
 #include <FastLED.h>
 
+#include <cstdint>
 #include "../config/consts.h"
 
 
@@ -20,7 +21,7 @@ private:
   }
 
 public:
-  Led(uint8_t );
+  Led(uint8_t number);
 
   uint8_t r = 0;
   uint8_t g = 0;  

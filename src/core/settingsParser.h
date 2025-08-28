@@ -10,7 +10,7 @@ class Settings{
         uint8_t displayBrightness = 100;
         int audioInterfaceScene = 1;
         bool nightMode = false;
-        uint8_t userPagesAmount = 1;
+        uint8_t userPagesAmount = 0;
         bool isLocked = false;
         bool isRunning = false; 
         

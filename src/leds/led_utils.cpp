@@ -19,7 +19,7 @@ const LedRow LedConfig::LED_ROWS[6] PROGMEM = {
 
 // Couleurs initiales optimisées (structure plus claire)
 const RGBColor LedConfig::INIT_LED_COLORS[NUM_LEDS] PROGMEM = {
-    RGBColor(160, 0, 200),   // LED 0: Rouge-Magenta (80*2, 0*2, 100*2)
+    RGBColor(100, 100, 100),   // LED 0: Rouge-Magenta (80*2, 0*2, 100*2)
     RGBColor(0, 156, 92),    // LED 1: Vert-Cyan (0*2, 78*2, 46*2)
     RGBColor(34, 46, 160),   // LED 2: Bleu-Indigo (17*2, 23*2, 80*2)
     RGBColor(200, 200, 0),   // LED 3: Jaune (100*2, 100*2, 0*2)

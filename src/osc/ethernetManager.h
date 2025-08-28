@@ -26,7 +26,6 @@ extern EthernetUDP showcontrolUdp;
 #define MAX_SERVICES 10
 
 extern int32_t showcontrolLocalPort, showcontrolAppInPort, ablesetInPort;
-extern IPAddress     localIP;
 extern IPAddress     myDns;
 extern IPAddress     gateway;
 extern IPAddress     subnet;
@@ -78,6 +77,7 @@ public:
   void checkForDisconnectedServices();
   void forceServiceCheck(); // Force une vérification immédiate des services
   void listAllServices(); // Debug function
+  void registerAblesetSeervice();
   
   uint8_t getQueueCount() { return queueCount; }
   bool isQueueFull() { return queueCount >= UDP_QUEUE_SIZE; }

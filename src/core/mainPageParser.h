@@ -9,7 +9,7 @@ class Main{
         uint16_t songColors[MAX_SONG], activeSongColor = _White, activeSongColorShade = _LightGray, nextSongColor = _LightGray, activeSectionColor = _LightGray;
 
         uint8_t selectedMode = 0, activeSectionIndex = 0;
-
+        bool activeSongNameDisplayedOnce;
         char activeSongName[MAX_SONG_NAME] = "Song Name";
         char activeSectionName[MAX_SONG_NAME] = "";
         char nextSectionName[MAX_SONG_NAME] = "Next Section";
@@ -64,6 +64,7 @@ class Main{
         void setSongColors(char colors[][MAX_SONG_NAME], int count);
         void setCCReceived(uint8_t channel,uint8_t control,uint8_t value);
         void setInformationMessage(const char* message, bool);
+        void updateSongProgress();
 
         void configureButton(uint8_t user_mode, uint8_t controlNum, 
             uint8_t control_type, uint8_t control_cc, uint8_t control_ch, 

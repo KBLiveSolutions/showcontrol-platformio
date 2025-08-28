@@ -32,6 +32,7 @@ uint16_t hexStringtoRGB565Shade(char* hex);
 #define _Indigo RRRGB888toRGB565(160, 80, 200)
 #define _Violet RRRGB888toRGB565(200, 5, 180)
 #define _Purple RRRGB888toRGB565(200, 20, 170)
+#define _PurpleStop RRRGB888toRGB565(120, 20, 180)
 #define _Fuchsia RRRGB888toRGB565(200, 20, 120)
 #define _Pink RRRGB888toRGB565(200, 5, 80)
 #define _Rose RRRGB888toRGB565(108, 5, 5)
