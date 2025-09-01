@@ -78,9 +78,6 @@ void Page::showButtons(bool show) {
       // Mode sécurisé: juste éteindre les LEDs
       l[buttonNum + 1].led_off();
       
-      // Protection contre l'affichage invalide
-      uint16_t defaultBgColor = 0x0000; // Noir par défaut
-      
       // Appel sécurisé avec des valeurs par défaut
       if (&mainPage) {  // Vérification que mainPage existe
         mainPage.showButtonSprite(false, buttonNum, "", defaultBgColor, false);
