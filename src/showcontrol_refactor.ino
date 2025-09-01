@@ -36,9 +36,14 @@ volatile bool core0_ready = false;
 #include "osc/OSCReceive.h"
 
 void setup() {
+  // Initialisation MIDI et réseau en dernier
+  DEBUG_LOGLN("Initializing MIDI...");
+  midi::setup();
+  delay(100);
+
   Serial.begin(115200);
   // ATTENTION: Ne pas attendre Serial sur ESP32/embedded - cause des blocages !
-  while (!Serial) ; // Attente de la connexion série
+  // while (!Serial) ; // Attente de la connexion série
   
   // Délai de stabilisation au démarrage - CRITIQUE pour éviter les crashes
   delay(200);
@@ -86,10 +91,6 @@ void setup() {
   encoder::setup();
   delay(100);
   
-  // Initialisation MIDI et réseau en dernier
-  DEBUG_LOGLN("Initializing MIDI...");
-  midi::setup();
-  delay(100);
 
   DEBUG_LOGLN("Initializing ethernet...");
   ethernet.setup();
@@ -109,9 +110,8 @@ void loop() {
   encoder::read();
   ethernet.read();
   midiHost.read();
-  // midi::read();
-  // midihost::loopMIDIHost();
-  delay(2);  // Délai court pour éviter les blocages, mais pas trop long pour la réactivité
+  midi::read();
+  // delay(2);  // Délai court pour éviter les blocages, mais pas trop long pour la réactivité
 }
 
 void setup1() {
