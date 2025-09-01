@@ -27,18 +27,18 @@ void MidiHost::begin() {
 
 void MidiHost::task() {
     
-  static uint32_t last_debug = 0;
-  static uint32_t loop_count = 0;
+  // static uint32_t last_debug = 0;
+  // static uint32_t loop_count = 0;
   USBHost.task();
-  loop_count++;
+  // loop_count++;
   // La lecture MIDI se fait désormais dans le callback tuh_midi_rx_cb
-  delay(1); // Limite la charge CPU et évite de saturer la stack USB
+  // delay(1); // Limite la charge CPU et évite de saturer la stack USB
   // Affiche un message toutes les 2 secondes pour vérifier que la boucle tourne et compter les passages
-  if (millis() - last_debug > 2000) {
-    Serial.printf("[DEBUG] loop1 tourne, host actif, count = %lu\r\n", loop_count);
-    Serial.flush();
-    last_debug = millis();
-  }
+  // if (millis() - last_debug > 2000) {
+  //   Serial.printf("[DEBUG] loop1 tourne, host actif, count = %lu\r\n", loop_count);
+  //   Serial.flush();
+  //   last_debug = millis();
+  // }
 }
 
 void MidiHost::handleDeviceConnected(uint8_t daddr) {
@@ -273,10 +273,10 @@ void MidiHost::read(){
     Serial.println();
   }
   // Affiche le nombre de messages reçus toutes les 2 secondes
-  if (millis() - last_debug > 2000) {
-    Serial.printf("[DEBUG] core0 a recu %lu messages MIDI\r\n", midi_count);
-    last_debug = millis();
-  }
+  // if (millis() - last_debug > 2000) {
+  //   Serial.printf("[DEBUG] core0 a recu %lu messages MIDI\r\n", midi_count);
+  //   last_debug = millis();
+  // }
 }
 
 
@@ -312,4 +312,3 @@ void MidiHost::decode_word(uint32_t midi_word, uint8_t* packet) {
   packet[2] = (midi_word >> 16) & 0xFF;
   packet[3] = (midi_word >> 24) & 0xFF;
 }
-

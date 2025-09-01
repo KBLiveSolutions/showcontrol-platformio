@@ -1,5 +1,5 @@
 #pragma once
-#include <FastLED.h>
+#include <Adafruit_NeoPixel.h>
 
 #include <cstdint>
 #include "../config/consts.h"
@@ -48,7 +48,9 @@ public:
   void showPixel(uint8_t r, uint8_t g, uint8_t b);
 };
 
+
 extern Led l[NUM_LEDS];
+extern Adafruit_NeoPixel strip;
 namespace leds{
   void clearLeds();
   void setup();

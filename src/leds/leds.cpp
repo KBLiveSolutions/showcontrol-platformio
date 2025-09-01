@@ -1,9 +1,11 @@
 
+
 #include "leds.h"
 #include "led_utils.h"
 #include "../core/settingsParser.h"
+#include <Adafruit_NeoPixel.h>
 
-CRGB pixels[NUM_LEDS];
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 Led l[NUM_LEDS] = {Led(0), Led(1), Led(2), Led(3), Led(4), Led(5)};
 
 Led::Led(uint8_t number) {
@@ -58,20 +60,14 @@ void Led::showPixel(uint8_t r, uint8_t g, uint8_t b) {
     LedRow ledRow = LedConfig::getLedRow(ledNumber);
     int8_t index = ledRow.getLed(j);
     if(index > -1) {
-      // Appliquer d'abord la luminosité, puis la correction gamma
+      // Appliquer d'abord la luminosité
       uint8_t adjustedR = r * settings.ledBrightness / 10;
       uint8_t adjustedG = g * settings.ledBrightness / 10;
       uint8_t adjustedB = b * settings.ledBrightness / 10;
-      
-      // Appliquer la correction gamma pour un rendu plus naturel
-      // RGBColor gammaCorrected = LedUtils::gammaCorrectColor(RGBColor(adjustedR, adjustedG, adjustedB));
-      
-      // pixels[index] = CRGB(gammaCorrected.r, gammaCorrected.g, gammaCorrected.b);
-      pixels[index] = CRGB(adjustedR, adjustedG, adjustedB);
-
+      strip.setPixelColor(index, strip.Color(adjustedR, adjustedG, adjustedB));
     }
-    // FastLED.show(); // DÉSACTIVÉ pour test USB Host
   }
+  strip.show();
 }
 
 void Led::show_color() {
@@ -126,7 +122,8 @@ void Led::led_off() {
 void leds::setup() {
   Serial.println("Starting LED initialization...");
   Serial.flush();
-  
+  strip.begin();
+  strip.show(); // Éteint toutes les LEDs
   Serial.println("Initializing LED objects...");
   Serial.flush();
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
@@ -134,11 +131,7 @@ void leds::setup() {
   }
   Serial.println("LED objects initialized");
   Serial.flush();
-  
-  // Réactivation FastLED
-  FastLED.addLeds<NEOPIXEL, LED_PIN>(pixels, NUMPIXELS); 
-  FastLED.show();
-  Serial.println("Setup LEDs done (FastLED réactivé)");
+  Serial.println("Setup LEDs done (NeoPixel)");
   Serial.flush();
 }
 
@@ -147,5 +140,3 @@ void leds::clearLeds() {
     l[i].show_direct_color(0, 0, 0);
   }
 }
-
-
