@@ -48,6 +48,10 @@ public:
     void sendJSONPage(int pageNum);
     void sendJSONPageOSC(int pageNum);
     void setup();
+    
+    // Fonctions de débogage
+    void debugListFiles();
+    void debugPrintJSON();
 };
 
 // Instance globale

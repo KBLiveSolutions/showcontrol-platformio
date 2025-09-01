@@ -1,0 +1,4 @@
+python3 uf2conv.py .pio/build/pico/littlefs.bin \
+  --base 0x1017f000 \
+  --family 0xe48bff56 \
+  --output showcontrol_filesystem.uf2

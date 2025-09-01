@@ -94,47 +94,13 @@ void Main::setActiveSongName(char* songName) {
     activeSongName[0] = '\0';
   }
   activePage.showActiveSongName();
+  activeSongNameDisplayedOnce = true; // Marquer que le nom de la chanson a été affiché au moins une fois
 
   strcpy(activeSectionName, " ");
   DEBUG_LOG_VALUE("onActiveSectionName: ", activeSectionName);
   activePage.showActiveSectionName();
 }
 
-void Main::setInformationMessage(const char* message, bool show) {
-  if (!message || strlen(message) == 0) {
-    DEBUG_LOGLN("setInformationMessage: empty message");
-    return;
-  }
-  
-  // Limitation à 32 caractères
-  char infoMsg[32];
-  strncpy(infoMsg, message, sizeof(infoMsg) - 1);
-  infoMsg[sizeof(infoMsg) - 1] = '\0'; // Assurer la terminaison de chaîne
-  
-  mainPage.showInfoSprite(infoMsg, _White, show);
-}
-
-void Main::setActiveSongColor(uint16_t color) {
-  activeSongColor = color;
-  DEBUG_LOG_VALUE("onActiveSongColor: ", activeSongColor);
-  // activeSongColorShade = hexStringtoRGB565Shade(strBuf);
-  activeSectionColor = activeSongColorShade;
-  if(activePage.pageType == SETLIST){
-    mainPage.updateProgressBarFine(true);
-    mainPage.showRemainingTimeInSong(true);
-  }
-}
-
-void Main::setActiveSongStart(float time) {
-  activeSongStart = time;
-  activeSongEnd = 0;
-  DEBUG_LOG_VALUE("onActiveSongStart: ", activeSongStart);
-}
-
-void Main::setActiveSongEnd(float time) {
-  activeSongEnd = time;
-  DEBUG_LOG_VALUE("activeSongEnd: ", activeSongEnd);
-}
 
 void Main::setActiveSongIndex(int index) {
   activeSongIndex = index;
@@ -154,26 +120,50 @@ void Main::setActiveSongIndex(int index) {
   // LED 3 (index 4 dans le tableau l[]) - contrôle "précédent"
 }
 
-void Main::setActiveSongDuration(float duration) {
-  activeSongDuration = duration;
-  DEBUG_LOG_VALUE("activeSongDuration changed: ", activeSongDuration);
-  if(activePage.pageType == SETLIST) {
-    mainPage.showRemainingTimeInSong(true);
+void Main::setInformationMessage(const char* message, bool show) {
+  if (!message || strlen(message) == 0) {
+    DEBUG_LOGLN("setInformationMessage: empty message");
+    return;
+  }
+  
+  // Limitation à 32 caractères
+  char infoMsg[32];
+  strncpy(infoMsg, message, sizeof(infoMsg) - 1);
+  infoMsg[sizeof(infoMsg) - 1] = '\0'; // Assurer la terminaison de chaîne
+  
+  mainPage.showInfoSprite(infoMsg, _White, show);
+}
+
+void Main::updateSongProgress(){
+  if(activePage.pageType == SETLIST){
     mainPage.updateProgressBarFine(true);
+    mainPage.showRemainingTimeInSong(true);
   }
 }
 
-void Main::setActiveSongProgress(float progress) {
-  // songPercentage = progress;
-  // if(activePage.pageType == SETLIST) {
-  //   mainPage.updateProgressBarFine(true);
-  // } 
+void Main::setActiveSongColor(uint16_t color) {
+  activeSongColor = color;
+  DEBUG_LOG_VALUE("onActiveSongColor: ", activeSongColor);
+  // activeSongColorShade = hexStringtoRGB565Shade(strBuf);
+  activeSectionColor = activeSongColorShade;
+  updateSongProgress();
 }
 
-void Main::setRemainingTimeInSet(float time) {
-  remainingTimeInSet = time;
-  DEBUG_LOG_VALUE("remainingTimeInSet changed: ", remainingTimeInSet);
-  if(activePage.pageType == SETLIST) mainPage.showRemainingTimeInSet(true);
+void Main::setActiveSongStart(float time) {
+  activeSongStart = time;
+  activeSongEnd = 0;
+  DEBUG_LOG_VALUE("onActiveSongStart: ", activeSongStart);
+}
+
+void Main::setActiveSongEnd(float time) {
+  activeSongEnd = time;
+  DEBUG_LOG_VALUE("activeSongEnd: ", activeSongEnd);
+}
+
+void Main::setActiveSongDuration(float duration) {
+  activeSongDuration = duration;
+  DEBUG_LOG_VALUE("activeSongDuration changed: ", activeSongDuration);
+  updateSongProgress();
 }
 
 void Main::setRemainingTimeInSong(float time) {
@@ -196,6 +186,20 @@ void Main::setRemainingTimeInSong(float time) {
     previousSeconds = currentSeconds;
   }
 }
+
+void Main::setActiveSongProgress(float progress) {
+  // songPercentage = progress;
+  // if(activePage.pageType == SETLIST) {
+  //   mainPage.updateProgressBarFine(true);
+  // } 
+}
+
+void Main::setRemainingTimeInSet(float time) {
+  remainingTimeInSet = time;
+  DEBUG_LOG_VALUE("remainingTimeInSet changed: ", remainingTimeInSet);
+  if(activePage.pageType == SETLIST) mainPage.showRemainingTimeInSet(true);
+}
+
 void Main::setNextSongName(char* name) {
     // Limitation à 20 caractères avec point de troncature
     truncateStringWithDot(nextSongName, name, 20);

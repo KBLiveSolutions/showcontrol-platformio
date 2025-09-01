@@ -729,6 +729,6 @@ void switchActivePage(Page& newPage) {
     }
     // Affichage sécurisé de la nouvelle page
     activePage.showPage();
-    activePage.showLeds();  // Affichage des LEDs après changement de page
+    // activePage.showLeds();  // Affichage des LEDs après changement de page
     isSwitching = false;
 }

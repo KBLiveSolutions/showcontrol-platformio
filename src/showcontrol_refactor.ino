@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <cstdint>
+#include <pico/multicore.h>  // Pour le contrôle manuel du second cœur
 #include "config/consts.h"
 #include "config/jsonManager.h"
 #include "core/mainPageParser.h"
@@ -9,6 +10,9 @@
 #include "core/globalParser.h"
 #include "core/pages.h"
 #include "core/utils.h"
+
+// Variable partagée pour synchroniser les cores
+volatile bool core0_ready = false;
 
 #include "leds/leds.h"
 #include "display/displaySetup.h"
@@ -25,6 +29,7 @@
 #include "midi/midi.h"
 #include "midi/midi_in.h"
 #include "midi/midi_out.h"
+#include "midi/midi_host.h"
 
 #include "osc/ethernetManager.h"
 #include "osc/OSCManager.h"
@@ -33,7 +38,7 @@
 void setup() {
   Serial.begin(115200);
   // ATTENTION: Ne pas attendre Serial sur ESP32/embedded - cause des blocages !
-  // while (!Serial) ; // Attente de la connexion série
+  while (!Serial) ; // Attente de la connexion série
   
   // Délai de stabilisation au démarrage - CRITIQUE pour éviter les crashes
   delay(200);
@@ -51,12 +56,19 @@ void setup() {
   
   // Initialisation hardware (doit être après settings)
   DEBUG_LOGLN("Initializing display...");
+  
+  // Délai important avant display pour éviter les conflits USB/SPI
+  delay(500);  // Délai plus long pour stabiliser
+  
   displayManager::setup();
-  delay(100);
+  delay(200);  // Délai après display setup
+  
+  DEBUG_LOGLN("Display setup done");
   
   DEBUG_LOGLN("Initializing LEDs...");
   leds::setup();
   delay(100);
+  DEBUG_LOGLN("Setup LEDs done");
   
   // Initialisation des pages (dépend de display et leds)
   DEBUG_LOGLN("Setting up pages...");
@@ -78,19 +90,34 @@ void setup() {
   DEBUG_LOGLN("Initializing MIDI...");
   midi::setup();
   delay(100);
-  
+
   DEBUG_LOGLN("Initializing ethernet...");
   ethernet.setup();
   delay(200);  // Délai important pour l'ethernet
+  
+  // Marquer le système comme prêt pour Core1
+  core0_ready = true;
+  DEBUG_LOGLN("Core0 setup complete - signaling Core1");
   
   // Marquer le système comme prêt
   DEBUG_LOGLN("ShowControl setup complete - system ready for network events");
 }
 
+
 void loop() {
   buttns::read();
   encoder::read();
   ethernet.read();
+  midiHost.read();
   // midi::read();
+  // midihost::loopMIDIHost();
   delay(2);  // Délai court pour éviter les blocages, mais pas trop long pour la réactivité
+}
+
+void setup1() {
+  midiHost.begin();
+}
+
+void loop1() {
+  midiHost.task();
 }

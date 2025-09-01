@@ -373,7 +373,7 @@ void MainPage::showPlaySprite(bool _isPlaying,bool show) {
     } else {
         // Affichage de l'icône de pause
         playSprite->sprite.fillRoundRect(0, 0, playSprite->width, playSprite->height, 4, _Black);
-        playSprite->sprite.fillRect(playSprite->width/2 - 8, playSprite->height/2 - 12, 24, 24, _Purple);
+        playSprite->sprite.fillRect(playSprite->width/2 - 8, playSprite->height/2 - 12, 24, 24, _PurpleStop);
     }   
     // playSprite->sprite.fillRoundRect(0, 0, playSprite->width, playSprite->height, 4, _Black);
     
