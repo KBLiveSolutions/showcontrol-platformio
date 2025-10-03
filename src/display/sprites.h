@@ -84,5 +84,5 @@ extern BasicSprite* settingSprites[ITEMSAMNT];
 void showSpriteColor(const char* , uint16_t , uint16_t , BasicSprite* , bool ) ;
 void showSprite(const char* , uint16_t , BasicSprite* ) ;
 void clearSprite(BasicSprite* );
-// void activePage.showPage();
+// void activePage->showPage();
 void drawTopLine();

@@ -237,6 +237,14 @@ bool JSONManager::getPages() {
         DEBUG_LOG(" loaded with ");
         DEBUG_LOG(displayArray.size());
         DEBUG_LOGLN(" display elements");
+        for (size_t j = 0; j < displayArray.size() && j < 3; ++j) {
+            int dispType = displayArray[j].as<int>();
+            pages[i].setDisplay(j, dispType);
+            DEBUG_LOG("[JSONManager] Display ");
+            DEBUG_LOG(j);
+            DEBUG_LOG(" set to type ");
+            DEBUG_LOGLN(dispType);
+        }
     }
     
     DEBUG_LOGLN("[JSONManager] All pages loaded successfully");
@@ -326,9 +334,9 @@ void JSONManager::setup() {
     DEBUG_LOG("[JSONManager] Night mode: ");
     DEBUG_LOGLN(settings.nightMode ? "true" : "false");
     
-    _main.selectedMode = jsonManager.getSelectedMode();
+    mainParser.selectedMode = jsonManager.getSelectedMode();
     DEBUG_LOG("[JSONManager] Selected mode: ");
-    DEBUG_LOGLN(_main.selectedMode);
+    DEBUG_LOGLN(mainParser.selectedMode);
     
     settings.userPagesAmount = jsonManager.getUserPagesAmount();
     DEBUG_LOG("[JSONManager] User pages amount: ");

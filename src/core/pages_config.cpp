@@ -1,4 +1,17 @@
-
+#include "pages.h"
+#include "utils.h"
+#include "../config/consts.h"
+// #include "../display/pages/mainPage.h"
+// #include "../display/pages/settingsPage.h"
+// #include "../display/pages/menuPage.h"
+// #include "../display/pages/splashPage.h"
+// #include "../display/pages/globalPage.h"
+// #include "../display/colors.h"
+// #include "../leds/leds.h"
+// #include "../osc/OSCManager.h"
+// #include "../midi/midi_out.h"
+#include "mainPageParser.h"
+// #include "globalParser.h"
     
 // ====================================
 // CONFIGURE
@@ -7,13 +20,13 @@
   void Page::setButtonControl(uint8_t controlNum, control_type_t type, uint8_t cc, uint8_t channel, uint8_t custom, uint8_t toggled) {
     if (controlNum >= 5) return;  // Protection contre l'accès hors limites
     
-    int user_mode = _main.selectedMode;
+    int user_mode = mainParser.selectedMode;
     control_type[controlNum] = type;
     control_cc[controlNum] = cc;
     control_ch[controlNum] = channel;
     control_custom[controlNum] = custom;
     control_toggle[controlNum] = toggled;
-    // if(pageNumber == _main.selectedMode) mainPage.showButtonSprite(false, controlNum, getActionName(user_mode, controlNum), getActionColor(user_mode, controlNum), getLuminance(controlNum));
+    // if(pageNumber == mainParser.selectedMode) mainPage.showButtonSprite(false, controlNum, getActionName(user_mode, controlNum), getActionColor(user_mode, controlNum), getLuminance(controlNum));
   };
 
   void Page::setButtonControlShifted(uint8_t controlNum, control_type_t type, uint8_t cc, uint8_t channel) {
@@ -44,42 +57,3 @@
     displayedItem[display_num] = static_cast<displayed_item_t>(display_type);
   }
   
-// Opérateurs globaux
-bool operator==(const Page& lhs, const Page& rhs) {
-  return lhs.pageNumber == rhs.pageNumber;
-}
-bool operator!=(const Page& lhs, const Page& rhs) {
-  return !(lhs == rhs);
-}
-
-Page& Page::operator=(const Page& other) {
-    if (this != &other) {
-        pageNumber = other.pageNumber;
-        pageType = other.pageType;
-        
-        // Utilisation de memcpy pour les copies de tableaux (plus efficace)
-        memcpy(buttonPressed, other.buttonPressed, sizeof(buttonPressed));
-        memcpy(buttonState, other.buttonState, sizeof(buttonState));
-        memcpy(control_custom, other.control_custom, sizeof(control_custom));
-        memcpy(control_type, other.control_type, sizeof(control_type));
-        memcpy(control_led_cc, other.control_led_cc, sizeof(control_led_cc));
-        memcpy(control_led_ch, other.control_led_ch, sizeof(control_led_ch));
-        memcpy(control_cc, other.control_cc, sizeof(control_cc));
-        memcpy(control_ch, other.control_ch, sizeof(control_ch));
-        memcpy(control_toggle, other.control_toggle, sizeof(control_toggle));
-        memcpy(pedalState, other.pedalState, sizeof(pedalState));
-        memcpy(pedal_cc, other.pedal_cc, sizeof(pedal_cc));
-        memcpy(pedal_ch, other.pedal_ch, sizeof(pedal_ch));
-        memcpy(pedal_toggle, other.pedal_toggle, sizeof(pedal_toggle));
-        memcpy(pedal_custom, other.pedal_custom, sizeof(pedal_custom));
-        memcpy(displayedItem, other.displayedItem, sizeof(displayedItem));
-        memcpy(led, other.led, sizeof(led));
-        
-        maxSpritesAmnt = other.maxSpritesAmnt;
-    }
-    return *this;
-}
-
-void removeUserPage(int pageNum) {
-  // À implémenter
-}

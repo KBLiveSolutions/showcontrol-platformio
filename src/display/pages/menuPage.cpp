@@ -110,21 +110,21 @@ void MenuPage::showPage() {
 
         case SONG_MENU:
         {
-            // Validation de _main.songsListSize
-            if (_main.songsListSize < 0 || _main.songsListSize > 100) {
-                DEBUG_LOG_VALUE("showPage: invalid songsListSize: ", _main.songsListSize);
-                _main.songsListSize = max(0, min(_main.songsListSize, 100));
+            // Validation de mainParser.songsListSize
+            if (mainParser.songsListSize < 0 || mainParser.songsListSize > 100) {
+                DEBUG_LOG_VALUE("showPage: invalid songsListSize: ", mainParser.songsListSize);
+                mainParser.songsListSize = max(0, min(mainParser.songsListSize, 100));
             }
             
-            activeMenuSize = _main.songsListSize;
+            activeMenuSize = mainParser.songsListSize;
             maxItems = min(activeMenuSize, (int)(sizeof(menuItems)/sizeof(menuItems[0])));
             
             for (uint8_t i = 0; i < maxItems; i++) {
                 DEBUG_LOG_VALUE("showPage: processing song index: ", i);    
-                // Protection contre l'accès hors limites de _main.songsList
-                if (i < sizeof(_main.songsList)/sizeof(_main.songsList[0]) && _main.songsList[i]) {
-                    DEBUG_LOG_VALUE("showPage: copying song name: ", _main.songsList[i]);
-                    strncpy(menuItems[i], _main.songsList[i], sizeof(menuItems[i]) - 1);
+                // Protection contre l'accès hors limites de mainParser.songsList
+                if (i < sizeof(mainParser.songsList)/sizeof(mainParser.songsList[0]) && mainParser.songsList[i]) {
+                    DEBUG_LOG_VALUE("showPage: copying song name: ", mainParser.songsList[i]);
+                    strncpy(menuItems[i], mainParser.songsList[i], sizeof(menuItems[i]) - 1);
                     menuItems[i][sizeof(menuItems[i]) - 1] = '\0';
                 } else {
                     DEBUG_LOG_VALUE("showPage: songsList index out of bounds: ", i);
@@ -136,19 +136,19 @@ void MenuPage::showPage() {
 
         case SETLIST_MENU:
         {
-            // Validation de _main.setlistsListSize
-            if (_main.setlistsListSize < 0 || _main.setlistsListSize > 100) {
-                DEBUG_LOG_VALUE("showPage: invalid setlistsListSize: ", _main.setlistsListSize);
-                _main.setlistsListSize = max(0, min(_main.setlistsListSize, 100));
+            // Validation de mainParser.setlistsListSize
+            if (mainParser.setlistsListSize < 0 || mainParser.setlistsListSize > 100) {
+                DEBUG_LOG_VALUE("showPage: invalid setlistsListSize: ", mainParser.setlistsListSize);
+                mainParser.setlistsListSize = max(0, min(mainParser.setlistsListSize, 100));
             }
             
-            activeMenuSize = _main.setlistsListSize;
+            activeMenuSize = mainParser.setlistsListSize;
             maxItems = min(activeMenuSize, (int)(sizeof(menuItems)/sizeof(menuItems[0])));
             
             for (uint8_t i = 0; i < maxItems; i++) {
-                // Protection contre l'accès hors limites de _main.setlistsList
-                if (i < sizeof(_main.setlistsList)/sizeof(_main.setlistsList[0]) && _main.setlistsList[i]) {
-                    strncpy(menuItems[i], _main.setlistsList[i], sizeof(menuItems[i]) - 1);
+                // Protection contre l'accès hors limites de mainParser.setlistsList
+                if (i < sizeof(mainParser.setlistsList)/sizeof(mainParser.setlistsList[0]) && mainParser.setlistsList[i]) {
+                    strncpy(menuItems[i], mainParser.setlistsList[i], sizeof(menuItems[i]) - 1);
                     menuItems[i][sizeof(menuItems[i]) - 1] = '\0';
                 } else {
                     DEBUG_LOG_VALUE("showPage: setlistsList index out of bounds: ", i);
@@ -180,17 +180,26 @@ void MenuPage::updateMainMenu() {
         return;
     }
 
-    // Calcul du startIndex pour le scroll
-
+    // Calcul du startIndex pour le scroll (à faire UNE SEULE FOIS)
+    if (activeMenu == SONG_MENU && activeMenuSize > MAX_MENU_ITEMS) {
+        if (activeMenuItem < startIndex) {
+            startIndex = activeMenuItem;
+        } else if (activeMenuItem >= startIndex + MAX_MENU_ITEMS) {
+            startIndex = activeMenuItem - (MAX_MENU_ITEMS - 1);
+        }
+        // Clamp pour éviter les débordements
+        if (startIndex > activeMenuSize - MAX_MENU_ITEMS)
+            startIndex = activeMenuSize - MAX_MENU_ITEMS;
+        if (startIndex < 0)
+            startIndex = 0;
+    } else if (activeMenu == SONG_MENU) {
+        startIndex = 0;
+    }
 
     // Recopie les bons noms dans les buffers
     for (uint8_t i = 0; i < maxItems; i++) {
         uint8_t menuItemIndex = startIndex + i;
-        if (menuItemIndex >= activeMenuSize) {
-            strncpy(menuItems[i], "", MAX_SONG_NAME-1);
-            menuItems[i][MAX_SONG_NAME-1] = '\0';
-            continue;
-        }
+        if (menuItemIndex >= activeMenuSize) break;
         const char* optionText = nullptr;
         switch (activeMenu) {
             case MAIN_MENU:
@@ -199,39 +208,21 @@ void MenuPage::updateMainMenu() {
                 } else if (menuItemIndex == activeMenuSize - 1) {
                     optionText = "Settings";
                 } else {
-                    // uint8_t modeIdx = menuItemIndex - 1;
-                    // if (modeIdx < sizeof(modesList)/sizeof(modesList[0]) && modesList[menuItemIndex]) {
-                    //     optionText = modesList[modeIdx];
-                    // } else {
-                        snprintf(menuItems[i], MAX_SONG_NAME, "User %d", menuItemIndex);
-                        optionText = menuItems[i];
-                    // }
+                    snprintf(menuItems[i], MAX_SONG_NAME, "User %d", menuItemIndex);
+                    optionText = menuItems[i];
                 }
                 break;
             case SONG_MENU:
-                if (activeMenuSize > MAX_MENU_ITEMS) {
-                    if (activeMenuItem >= startIndex + MAX_MENU_ITEMS) {
-                        startIndex = activeMenuItem - (MAX_MENU_ITEMS - 1);
-                    } else if (activeMenuItem < startIndex) {
-                        startIndex = activeMenuItem;
-                    }
-                    } 
-                    else {
-                        startIndex = 0;
-                    }
-                if (startIndex > activeMenuSize - MAX_MENU_ITEMS) startIndex = activeMenuSize - MAX_MENU_ITEMS;
-                if (startIndex < 0) startIndex = 0;
-                if (menuItemIndex < sizeof(_main.songsList)/sizeof(_main.songsList[0]) && _main.songsList[menuItemIndex]) {
-                    optionText = _main.songsList[menuItemIndex];
-                } 
-                else {
+                if (menuItemIndex < sizeof(mainParser.songsList)/sizeof(mainParser.songsList[0]) && mainParser.songsList[menuItemIndex]) {
+                    optionText = mainParser.songsList[menuItemIndex];
+                } else {
                     snprintf(menuItems[i], MAX_SONG_NAME, "Song %d", menuItemIndex+1);
                     continue;
                 }
                 break;
             case SETLIST_MENU:
-                if (menuItemIndex < sizeof(_main.setlistsList)/sizeof(_main.setlistsList[0]) && _main.setlistsList[menuItemIndex]) {
-                    optionText = _main.setlistsList[menuItemIndex];
+                if (menuItemIndex < sizeof(mainParser.setlistsList)/sizeof(mainParser.setlistsList[0]) && mainParser.setlistsList[menuItemIndex]) {
+                    optionText = mainParser.setlistsList[menuItemIndex];
                 } else {
                     snprintf(menuItems[i], MAX_SONG_NAME, "Setlist %d", menuItemIndex+1);
                     continue;

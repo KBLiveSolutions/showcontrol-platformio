@@ -27,7 +27,7 @@ void sendOSCAblesetSubscribe() {
   oscMessage.add("auto");
   oscMessage.add((int32_t)showcontrolLocalPort);
   oscMessage.add("show control");
-  oscMessage.add(true);
+  // oscMessage.add(true);
   oscMessage.add(get_uuid());
   for (int i = 0; i < ethernet.totalServiceCount; i++) {
     if (ethernet.discoveredServices[i].serviceType == ABLESETSRV) {

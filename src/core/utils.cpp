@@ -6,8 +6,6 @@
 
 control_type_t controlType[4] = {NOTE, CC, PC, FIXED};
 
-bool debugOn = true;
-
 long unsigned _now = 0;
 
 displayed_item_t displayedItemsArray[] = {

@@ -128,88 +128,88 @@ void GlobalPage::updateEthSprite(int amount){
   showEthSprite(settings.MIDIConnected, amount);
 }
 
-void GlobalPage::showPageIcon(){
-  // Vérification critique du pointeur sprite
-  if (!modeSprite) {
-    DEBUG_LOGLN("showPageIcon: modeSprite is null");
-    return;
-  }
+// void GlobalPage::showPageIcon(){
+//   // Vérification critique du pointeur sprite
+//   if (!modeSprite) {
+//     DEBUG_LOGLN("showPageIcon: modeSprite is null");
+//     return;
+//   }
   
-  // Validation de _main.selectedMode
-  if (_main.selectedMode < 0 || _main.selectedMode > 10) {
-    DEBUG_LOG_VALUE("showPageIcon: invalid selectedMode: ", _main.selectedMode);
-    _main.selectedMode = 0;  // Valeur par défaut
-  }
+//   // Validation de mainParser.selectedMode
+//   if (mainParser.selectedMode < 0 || mainParser.selectedMode > 10) {
+//     DEBUG_LOG_VALUE("showPageIcon: invalid selectedMode: ", mainParser.selectedMode);
+//     mainParser.selectedMode = 0;  // Valeur par défaut
+//   }
   
-  int padding = 6;
-  modeSprite->sprite.createSprite(24, 24);
-  modeSprite->sprite.setTextDatum(3); 
+//   int padding = 6;
+//   modeSprite->sprite.createSprite(24, 24);
+//   modeSprite->sprite.setTextDatum(3); 
   
-  // Correction de la logique cassée : simplification
-  uint16_t color;
-  if (_main.selectedMode == 0) {
-    color = _Emerald;  // Page Setlist
-  } else {
-    color = _Purple;   // Pages User
-  }
+//   // Correction de la logique cassée : simplification
+//   uint16_t color;
+//   if (mainParser.selectedMode == 0) {
+//     color = _Emerald;  // Page Setlist
+//   } else {
+//     color = _Purple;   // Pages User
+//   }
   
-  modeSprite->sprite.setTextColor(color, defaultBgColor);
-  modeSprite->sprite.drawRect(0, 0, 16, 16, color);
+//   modeSprite->sprite.setTextColor(color, defaultBgColor);
+//   modeSprite->sprite.drawRect(0, 0, 16, 16, color);
   
-  if (_main.selectedMode == 0) {
-    // Affichage pour Setlist
-    modeSprite->sprite.drawFastHLine(4, 4, 8, color);
-    modeSprite->sprite.drawFastHLine(4, 8, 8, color);
-    modeSprite->sprite.drawFastHLine(4, 12, 8, color);
-  } else {
-    // Affichage pour User pages
-    char buffer[8];  // Buffer sécurisé
-    int result = snprintf(buffer, sizeof(buffer), "U%u", _main.selectedMode);
-    if (result < 0 || result >= sizeof(buffer)) {
-      DEBUG_LOGLN("showPageIcon: buffer overflow");
-      strcpy(buffer, "U?");
-    }
+//   if (mainParser.selectedMode == 0) {
+//     // Affichage pour Setlist
+//     modeSprite->sprite.drawFastHLine(4, 4, 8, color);
+//     modeSprite->sprite.drawFastHLine(4, 8, 8, color);
+//     modeSprite->sprite.drawFastHLine(4, 12, 8, color);
+//   } else {
+//     // Affichage pour User pages
+//     char buffer[8];  // Buffer sécurisé
+//     int result = snprintf(buffer, sizeof(buffer), "U%u", mainParser.selectedMode);
+//     if (result < 0 || result >= sizeof(buffer)) {
+//       DEBUG_LOGLN("showPageIcon: buffer overflow");
+//       strcpy(buffer, "U?");
+//     }
     
-    // Protection contre topBarHeight non défini
-    int yPos = 8;  // Valeur par défaut au lieu de topBarHeight/2 - 8
-    modeSprite->sprite.drawString(buffer, 2, yPos, GFXFF);
-  }
+//     // Protection contre topBarHeight non défini
+//     int yPos = 8;  // Valeur par défaut au lieu de topBarHeight/2 - 8
+//     modeSprite->sprite.drawString(buffer, 2, yPos, GFXFF);
+//   }
   
-  modeSprite->sprite.pushSprite(modeSprite->positionX, modeSprite->positionY + 8);
-  modeSprite->sprite.deleteSprite();
-}
+//   modeSprite->sprite.pushSprite(modeSprite->positionX, modeSprite->positionY + 8);
+//   modeSprite->sprite.deleteSprite();
+// }
 
 void GlobalPage::showTitle(){
   char optionText[32];  // Buffer agrandi pour sécurité
   
-  // Validation de _main.selectedMode
-  if (_main.selectedMode < 0 || _main.selectedMode > 10) {
-    DEBUG_LOG_VALUE("showTitle: invalid selectedMode: ", _main.selectedMode);
-    _main.selectedMode = 0;
+  // Validation de mainParser.selectedMode
+  if (mainParser.selectedMode < 0 || mainParser.selectedMode > 10) {
+    DEBUG_LOG_VALUE("showTitle: invalid selectedMode: ", mainParser.selectedMode);
+    mainParser.selectedMode = 0;
   }
   
-  if (activePage.pageType == SETLIST) {
+  if (activePage->pageType == SETLIST) {
     strcpy(optionText, "Setlist");
   } 
-  else if (activePage.pageType == USER) {
-    int result = snprintf(optionText, sizeof(optionText), "User %u", _main.selectedMode);
+  else if (activePage->pageType == USER) {
+    int result = snprintf(optionText, sizeof(optionText), "User %u", mainParser.selectedMode);
     if (result < 0 || result >= sizeof(optionText)) {
       DEBUG_LOGLN("showTitle: buffer overflow for User page");
       strcpy(optionText, "User ?");
     }
   }
-  else if (activePage.pageType == SETTINGS) {
+  else if (activePage->pageType == SETTINGS) {
     strcpy(optionText, "Settings");
   }
-  else if (activePage.pageType == MENU) {
+  else if (activePage->pageType == MENU) {
     strcpy(optionText, "Menu");
   }
-  else if (activePage.pageType == SPLASH) {
+  else if (activePage->pageType == SPLASH) {
     strcpy(optionText, "Splash");
   }
   else {
     // Type de page inconnu
-    DEBUG_LOG_VALUE("showTitle: unknown page type: ", activePage.pageType);
+    DEBUG_LOG_VALUE("showTitle: unknown page type: ", activePage->pageType);
     strcpy(optionText, "Unknown");
   }
   

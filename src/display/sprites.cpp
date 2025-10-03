@@ -190,7 +190,7 @@ void drawTopLine(){
 //   // char optionText[20];
 //   // snprintf(optionText, sizeof(optionText), "User %u", mainPage.selectedMode);
 //   // if (mainPage.selectedMode == 0) strcpy(optionText, itemToDisplay[indexOfItem(ActiveSetlist)]);
-//   // else if (activePage.pageType == SETTINGS) strcpy(optionText, "Settings");
+//   // else if (activePage->pageType == SETTINGS) strcpy(optionText, "Settings");
 //   showSprite(optionText, _LightGray, titleSprite);
 // }
 

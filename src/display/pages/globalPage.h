@@ -11,7 +11,7 @@ public:
     void showEthSprite(bool state, int) ;
     void updateEthSprite(int);
     void showTitle();
-    void showPageIcon();
+    // void showPageIcon();
     void setupGlobalPage();
     void showLock(bool );
 };

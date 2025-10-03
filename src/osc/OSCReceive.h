@@ -51,3 +51,6 @@ void onSerialMessage(OSCMessage &msg, int addrOffset);
 void onDisplayMessage(OSCMessage &msg, int addrOffset);
 void onExMIDI(OSCMessage &msg, int addrOffset);
 void receiveOSCMsg(char*, int );
+
+extern volatile bool oscMsgProcessing;
+extern  unsigned long lastOscTime;

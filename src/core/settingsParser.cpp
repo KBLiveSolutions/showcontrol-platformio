@@ -24,23 +24,23 @@ void Settings::getItStarted(){
       isRunning = true;  // Marquer comme en cours d'exécution
       
       // Nettoyage sécurisé de la page active
-      if (activePage.pageType != NONE) {
-        activePage.clearPage();
+      if (activePage->pageType != NONE) {
+        activePage->clearPage();
       }
       
       DEBUG_LOGLN("Handshake response received");
       
-      // Validation et sécurisation de _main.selectedMode
-      _main.selectedMode = 0; //jsonManager.getSelectedMode();
+      // Validation et sécurisation de mainParser.selectedMode
+      mainParser.selectedMode = jsonManager.getSelectedMode();
       
       // Vérification de validité du mode sélectionné
-      if (_main.selectedMode >= 6) {
-        DEBUG_LOG_VALUE("Invalid selectedMode, resetting to 0: ", _main.selectedMode);
-        _main.selectedMode = 0;
+      if (mainParser.selectedMode >= 6) {
+        DEBUG_LOG_VALUE("Invalid selectedMode, resetting to 0: ", mainParser.selectedMode);
+        mainParser.selectedMode = 0;
       }
       
       // S'assurer que les pages sont correctement initialisées
-      if (pages[_main.selectedMode].pageType == NONE) {
+      if (pages[mainParser.selectedMode].pageType == NONE) {
         DEBUG_LOGLN("Page not initialized, setting up pages...");
         setupPages();
         delay(50);
@@ -55,12 +55,12 @@ void Settings::getItStarted(){
       DEBUG_LOGLN("GlobalPage setup completed");
       
       // Changement de page sécurisé avec délai
-      DEBUG_LOG_VALUE("Attempting to change to page: ", _main.selectedMode);
+      DEBUG_LOG_VALUE("Attempting to change to page: ", mainParser.selectedMode);
       delay(100);  // Délai important pour stabiliser
       
       // Vérification finale avant changement de page
-      if (_main.selectedMode < 6 && pages[_main.selectedMode].pageType != NONE) {
-        switchActivePage(pages[_main.selectedMode]);
+      if (mainParser.selectedMode < 6 && pages[mainParser.selectedMode].pageType != NONE) {
+        switchActivePage(pages[mainParser.selectedMode]);
         DEBUG_LOGLN("Page change successful");
       } else {
         DEBUG_LOGLN("Page change failed - falling back to splash page");

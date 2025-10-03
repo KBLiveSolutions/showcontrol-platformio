@@ -4,7 +4,7 @@
 #define FIRMWARE_MINOR_VERSION 5
 
 #define NUM_CONTROLS 5
-#define NUM_BUTTONS 9
+#define NUM_BUTTONS 12
 #define NUM_SLIDERS 2
 #define NUM_ENCODERS 1
 #define NUM_DISPLAY 3
@@ -20,7 +20,6 @@
 
 #define NUM_LEDS 6
 #define LED_PIN   27
-#define NUMPIXELS 19 
 #define TFT_LED 15
 
 #define PING_INTERVAL 2000

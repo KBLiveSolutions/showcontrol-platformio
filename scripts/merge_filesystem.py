@@ -130,7 +130,7 @@ def create_uf2_blocks_for_filesystem(fs_data, base_address):
     UF2_MAGIC_START0 = 0x0A324655
     UF2_MAGIC_START1 = 0x9E5D5157
     UF2_MAGIC_END = 0x0AB16F30
-    UF2_FLAG_NOT_MAIN_FLASH = 0x00000001
+    UF2_FLAG_NOTmainParser_FLASH = 0x00000001
     UF2_FLAG_FILE_CONTAINER = 0x00001000
     FAMILY_ID_RP2040 = 0xe48bff56
     
@@ -223,5 +223,5 @@ def main():
     
     return 0
 
-if __name__ == "__main__":
+if __name__ == "_mainParser__":
     sys.exit(main())

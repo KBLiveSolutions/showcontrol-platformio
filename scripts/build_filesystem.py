@@ -34,6 +34,6 @@ try:
     print("✅ [FILESYSTEM] Script de pré-build configuré")
 except:
     # Exécution directe pour test
-    if __name__ == "__main__":
+    if __name__ == "_mainParser__":
         print("⚠️  Ce script doit être exécuté dans le contexte PlatformIO")
         print("Utilisation: pio run")

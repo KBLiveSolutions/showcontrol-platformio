@@ -46,6 +46,10 @@ public:
   void set_red();
   void led_off();
   void showPixel(uint8_t r, uint8_t g, uint8_t b);
+  uint16_t getColor() const {
+    // Conversion RGB888 -> RGB565
+    return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+}
 };
 
 

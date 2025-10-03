@@ -52,6 +52,8 @@ struct Page {
     void updatePlaySprite();
     void updateLoopSprite();
     void updateSongIndex();
+    void showUserElements();
+    void showSetlistElements();
 
     // Helper functions
     void handleSetlistButton(uint8_t buttonNum);
@@ -90,7 +92,7 @@ extern Page pages[6];
 extern Page SETTINGS_PAGE;
 extern Page MENU_PAGE;
 extern Page SPLASH_PAGE;
-extern Page activePage;
+extern Page* activePage;
 extern Page previousActivePage;
 
 // Fonctions utilitaires
@@ -103,7 +105,7 @@ void setupPages();
 
 // void changeActivePage(uint8_t pageNum);
 
-// void activePage.showPage();
+// void activePage->showPage();
 // void showSongsCounter(bool show);
 
 // Helper functions

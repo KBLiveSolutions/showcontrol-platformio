@@ -1,5 +1,11 @@
 
+#define CFG_TUD_MAX_POWER_MA 500  // 500 mA par exemple
 
+#ifndef FIRMWARE_VERSION
+#define FIRMWARE_VERSION "dev"
+#endif
+
+const char* firmwareVersion = FIRMWARE_VERSION;
 #include <Arduino.h>
 #include <cstdint>
 #include <pico/multicore.h>  // Pour le contrôle manuel du second cœur
@@ -24,6 +30,7 @@ volatile bool core0_ready = false;
 
 #include "input/buttons.h"
 #include "input/encoder.h"
+#include "input/pedal.h"
 #include "input/expressionPedal.h"
 
 #include "midi/midi.h"
@@ -35,15 +42,21 @@ volatile bool core0_ready = false;
 #include "osc/OSCManager.h"
 #include "osc/OSCReceive.h"
 
+
 void setup() {
   // Initialisation MIDI et réseau en dernier
   DEBUG_LOGLN("Initializing MIDI...");
   midi::setup();
   delay(100);
 
+
+
   Serial.begin(115200);
   // ATTENTION: Ne pas attendre Serial sur ESP32/embedded - cause des blocages !
   // while (!Serial) ; // Attente de la connexion série
+
+  // Marquer le système comme prêt pour Core1
+  core0_ready = true;
   
   // Délai de stabilisation au démarrage - CRITIQUE pour éviter les crashes
   delay(200);
@@ -84,20 +97,23 @@ void setup() {
   DEBUG_LOGLN("Showing splash page...");
   splashPage.showPage();
   delay(200);
-  
-  // Initialisation des entrées (après display)
-  DEBUG_LOGLN("Initializing inputs...");
-  buttns::setup();
-  encoder::setup();
-  delay(100);
+ 
   
 
   DEBUG_LOGLN("Initializing ethernet...");
   ethernet.setup();
   delay(200);  // Délai important pour l'ethernet
   
-  // Marquer le système comme prêt pour Core1
-  core0_ready = true;
+  for (auto& pedal : pedals) {
+      pedal.begin();
+  }
+  // Initialisation des entrées (après display)
+  DEBUG_LOGLN("Initializing inputs...");
+  buttons.setup();
+  encoder::setup();
+  delay(100);
+
+  
   DEBUG_LOGLN("Core0 setup complete - signaling Core1");
   midi::sendLiveHandshake();
   // Marquer le système comme prêt
@@ -106,12 +122,12 @@ void setup() {
 
 
 void loop() {
-  buttns::read();
+  buttons.read();
   encoder::read();
   ethernet.read();
   midiHost.read();
   midi::read();
-  // delay(2);  // Délai court pour éviter les blocages, mais pas trop long pour la réactivité
+  delay(1);  // Délai court pour éviter les blocages, mais pas trop long pour la réactivité
 }
 
 void setup1() {

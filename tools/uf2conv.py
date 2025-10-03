@@ -361,5 +361,5 @@ def main():
                 write_file(d + "/NEW.UF2", outbuf)
 
 
-if __name__ == "__main__":
+if __name__ == "_mainParser__":
     main()

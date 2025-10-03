@@ -1,3 +1,17 @@
+#include "pages.h"
+#include "utils.h"
+#include "../config/consts.h"
+#include "../display/pages/mainPage.h"
+// #include "../display/pages/settingsPage.h"
+// #include "../display/pages/menuPage.h"
+// #include "../display/pages/splashPage.h"
+// #include "../display/pages/globalPage.h"
+#include "../display/colors.h"
+#include "../leds/leds.h"
+#include "../osc/OSCManager.h"
+#include "../midi/midi_out.h"
+// #include "mainPageParser.h"
+// #include "globalParser.h"
 
 // ====================================
 // ACTIONS
@@ -39,7 +53,7 @@ void Page::buttonDoublePress(uint8_t buttonNum) {
 void Page::onButtonShortPress(uint8_t buttonNum) {
   // Vérification de sécurité pour buttonPressed[]
   if (buttonNum >= 8) return;  // Protection pour le tableau buttonPressed[8]
-  
+  DEBUG_LOG_VALUE("Page Button ", buttonNum);
   buttonPressed[buttonNum] = true;
   
   if (buttonNum < 5) {
@@ -72,21 +86,45 @@ void Page::onButtonShortPress(uint8_t buttonNum) {
 }
 
 void Page::press_button(uint8_t buttonNum) {
-}
-
-void Page::release_button(uint8_t buttonNum) {
-  // buttonPressed[buttonNum] = false;
-  // if (buttonNum < 5) {
+  // DEBUG_LOG_VALUE("Page Button press_button", buttonNum);
+  //   if (buttonNum < 6) {
   //   l[buttonNum + 1].show_color();
   //   if (pageType == USER) 
   //   {
-  //     mainPage.showButton(buttonPressed[buttonNum], buttonNum, getActionName(pageNumber, buttonNum), getActionColor(pageNumber, buttonNum), getLuminance(buttonNum));
+  //     uint16_t ledColor = l[buttonNum + 1].getColor(); // Méthode à adapter selon ta classe LED
+  //     mainPage.showButtonSprite(
+  //         buttonPressed[buttonNum],
+  //         buttonNum,
+  //         getActionName(pageNumber, buttonNum),
+  //         ledColor, // couleur de la LED
+  //         getLuminance(buttonNum)
+  //     );
   //   }
-  //   if (control_toggle[buttonNum] == 0 && control_type[buttonNum] != PC) {
-  //     sendOSCShowControl("/showcontrol/control_id", control_cc[buttonNum], 0, control_ch[buttonNum] + 1);
-  //     midi::sendToDAWPort(control_type[buttonNum], control_ch[buttonNum], control_cc[buttonNum], 0);
-  //   }
-  // } 
+  // }
+}
+
+void Page::release_button(uint8_t buttonNum) {
+  buttonPressed[buttonNum] = false;
+  if (buttonNum < 6) {
+    l[buttonNum + 1].show_color();
+    if (pageType == USER) 
+    {
+      buttonNum--;
+          uint16_t ledColor = l[buttonNum + 1].getColor(); // Méthode à adapter selon ta classe LED
+          mainPage.showButtonSprite(
+              false,
+              buttonNum,
+              getActionName(pageNumber, buttonNum),
+              ledColor, // couleur de la LED
+              getLuminance(buttonNum)
+          );
+      // mainPage.showButtonSprite(buttonPressed[buttonNum], buttonNum, getActionName(pageNumber, buttonNum), getActionColor(pageNumber, buttonNum), getLuminance(buttonNum));
+    }
+    // if (control_toggle[buttonNum] == 0 && control_type[buttonNum] != PC) {
+    //   sendOSCShowControl("/showcontrol/control_id", control_cc[buttonNum], 0, control_ch[buttonNum] + 1);
+    //   midi::sendToDAWPort(control_type[buttonNum], control_ch[buttonNum], control_cc[buttonNum], 0);
+    // }
+  } 
   // else release_pedal(buttonNum - 6);
 }
 

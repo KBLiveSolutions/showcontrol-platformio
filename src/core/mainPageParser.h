@@ -7,7 +7,6 @@
 class Main{
     public:
         uint16_t songColors[MAX_SONG], activeSongColor = _White, activeSongColorShade = _LightGray, nextSongColor = _LightGray, activeSectionColor = _LightGray;
-
         uint8_t selectedMode = 0, activeSectionIndex = 0;
         bool activeSongNameDisplayedOnce;
         char activeSongName[MAX_SONG_NAME] = "Song Name";
@@ -41,6 +40,8 @@ class Main{
         void sendSongArrayRequest();
         void parseDisplayItem(uint8_t itemType, char* strBuf, int arg2);
         void parseArrayItem(uint8_t itemType, char* strBuf, uint8_t listIndex, uint8_t listLength);
+        void setSceneName(char* );
+        void setTrackName(char* );
         void setActiveSongName(char* );
         void setActiveSongColor(uint16_t );
         void setActiveSongStart(float);
@@ -65,6 +66,7 @@ class Main{
         void setCCReceived(uint8_t channel,uint8_t control,uint8_t value);
         void setInformationMessage(const char* message, bool);
         void updateSongProgress();
+        void updateProgressBar();
 
         void configureButton(uint8_t user_mode, uint8_t controlNum, 
             uint8_t control_type, uint8_t control_cc, uint8_t control_ch, 
@@ -80,7 +82,7 @@ class Main{
 
 };
 
-extern Main _main;
+extern Main mainParser;
 
 
 int indexOfItem(displayed_item_t itemToFind);

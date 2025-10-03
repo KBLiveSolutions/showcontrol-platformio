@@ -28,5 +28,5 @@ def main():
     print("✅ Filesystem uploadé avec succès!")
     return 0
 
-if __name__ == "__main__":
+if __name__ == "_mainParser__":
     sys.exit(main())

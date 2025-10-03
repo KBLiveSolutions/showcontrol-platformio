@@ -15,7 +15,7 @@
 #include "../midi/midi_out.h"
 #include "../osc/OSCManager.h"
 
-Main _main;
+Main mainParser;
 
 // Fonction utilitaire optimisée pour tronquer les chaînes avec un point
 void truncateStringWithDot(char* destination, const char* source, size_t maxLength) {
@@ -56,6 +56,19 @@ void Main::sendSongArrayRequest(){
   sendOSCSysex(sysex_msg, 7);
 }
 
+void Main::setSceneName(char* _sceneName){
+  strncpy(sceneName, _sceneName, sizeof(sceneName) - 1);
+  sceneName[sizeof(sceneName) - 1] = '\0'; // Toujours terminer la chaîne
+  DEBUG_LOG_VALUE("onSceneName: ", sceneName);
+  activePage->showSceneName();
+}
+
+void Main::setTrackName(char* _trackName){
+  strncpy(trackName, _trackName, sizeof(trackName) - 1);
+  trackName[sizeof(trackName) - 1] = '\0';
+  activePage->showTrackName();
+}
+
 void Main::setActiveSongName(char* songName) {
   DEBUG_LOG_VALUE("onActiveSongName: ", songName);
 
@@ -93,12 +106,12 @@ void Main::setActiveSongName(char* songName) {
   } else {
     activeSongName[0] = '\0';
   }
-  activePage.showActiveSongName();
+  activePage->showActiveSongName();
   activeSongNameDisplayedOnce = true; // Marquer que le nom de la chanson a été affiché au moins une fois
 
   strcpy(activeSectionName, " ");
   DEBUG_LOG_VALUE("onActiveSectionName: ", activeSectionName);
-  activePage.showActiveSectionName();
+  activePage->showActiveSectionName();
 }
 
 
@@ -106,16 +119,16 @@ void Main::setActiveSongIndex(int index) {
   activeSongIndex = index;
   DEBUG_LOG_VALUE("activeSongIndex changed: ", activeSongIndex);
   // Validation des paramètres pour éviter les erreurs
-  if (_main.songsListSize <= 0) {
-    DEBUG_LOG_VALUE("setActiveSongIndex: invalid songsListSize: ", _main.songsListSize);
+  if (mainParser.songsListSize <= 0) {
+    DEBUG_LOG_VALUE("setActiveSongIndex: invalid songsListSize: ", mainParser.songsListSize);
     return;
   }
   
-  if (_main.activeSongIndex < 0) {
-    DEBUG_LOG_VALUE("setActiveSongIndex: invalid activeSongIndex: ", _main.activeSongIndex);
+  if (mainParser.activeSongIndex < 0) {
+    DEBUG_LOG_VALUE("setActiveSongIndex: invalid activeSongIndex: ", mainParser.activeSongIndex);
     return;
   }
-  activePage.updateSongIndex();
+  activePage->updateSongIndex();
   // Contrôle des LEDs selon la position dans la liste
   // LED 3 (index 4 dans le tableau l[]) - contrôle "précédent"
 }
@@ -135,8 +148,8 @@ void Main::setInformationMessage(const char* message, bool show) {
 }
 
 void Main::updateSongProgress(){
-  if(activePage.pageType == SETLIST){
-    mainPage.updateProgressBarFine(true);
+  if(activePage->pageType == SETLIST){
+    // mainPage.updateProgressBarFine(true);
     mainPage.showRemainingTimeInSong(true);
   }
 }
@@ -179,9 +192,9 @@ void Main::setRemainingTimeInSong(float time) {
     songPercentage = 0;
   }
   if(currentSeconds != previousSeconds) {
-    if(activePage.pageType == SETLIST) mainPage.showRemainingTimeInSong(true);
-      if(activePage.pageType == SETLIST) {
-    mainPage.updateProgressBarFine(true);
+    if(activePage->pageType == SETLIST) mainPage.showRemainingTimeInSong(true);
+      if(activePage->pageType == SETLIST) {
+    // mainPage.updateProgressBarFine(true);
   } 
     previousSeconds = currentSeconds;
   }
@@ -189,7 +202,7 @@ void Main::setRemainingTimeInSong(float time) {
 
 void Main::setActiveSongProgress(float progress) {
   // songPercentage = progress;
-  // if(activePage.pageType == SETLIST) {
+  // if(activePage->pageType == SETLIST) {
   //   mainPage.updateProgressBarFine(true);
   // } 
 }
@@ -197,7 +210,7 @@ void Main::setActiveSongProgress(float progress) {
 void Main::setRemainingTimeInSet(float time) {
   remainingTimeInSet = time;
   DEBUG_LOG_VALUE("remainingTimeInSet changed: ", remainingTimeInSet);
-  if(activePage.pageType == SETLIST) mainPage.showRemainingTimeInSet(true);
+  if(activePage->pageType == SETLIST) mainPage.showRemainingTimeInSet(true);
 }
 
 void Main::setNextSongName(char* name) {
@@ -205,13 +218,13 @@ void Main::setNextSongName(char* name) {
     truncateStringWithDot(nextSongName, name, 20);
     
     DEBUG_LOG_VALUE("onNextSongName: ", nextSongName);
-    activePage.showNextSongName();
+    activePage->showNextSongName();
 }
 
 void Main::setNextSongColor(uint16_t color) {
   nextSongColor = color;
   DEBUG_LOG_VALUE("onNextSongColor: ", nextSongColor);
-  // activePage.showNextSongColor();
+  // activePage->showNextSongColor();
 }
 
 void Main::setActiveSectionName(char* name) {
@@ -224,14 +237,14 @@ void Main::setActiveSectionName(char* name) {
     truncateStringWithDot(activeSectionName, name, 20);
   }
   DEBUG_LOG_VALUE("onActiveSectionName: ", activeSectionName);
-  activePage.showActiveSectionName();
+  activePage->showActiveSectionName();
   songPercentage = 0.0f; // Réinitialisation du pourcentage de la chanson
 }
 
 void Main::setActiveSectionIndex(int index) {
   activeSectionIndex = index;
   DEBUG_LOG_VALUE("activeSectionIndex changed: ", activeSectionIndex);
-  // activePage.showActiveSectionIndex();
+  // activePage->showActiveSectionIndex();
 }
 void Main::setActiveSectionStart(float time) {
   activeSectionStart = time;
@@ -245,14 +258,14 @@ void Main::setActiveSectionEnd(float time) {
 void Main::setActiveSectionColor(uint16_t color) {
   activeSectionColor = color;
   // DEBUG_LOG_VALUE("activeSectionColor changed: ", activeSectionColor);
-  // activePage.showActiveSectionColor(activeSectionColor);
+  // activePage->showActiveSectionColor(activeSectionColor);
 }
 void Main::setSections(char sections[][MAX_SONG_NAME], int count) {
   for (int i = 0; i < count; i++) {
     strcpy(sections[i], sections[i]);
   DEBUG_LOG_VALUE("sections changed: ", sections[i]);
   }
-  // activePage.showSections(activePage.sections, count);
+  // activePage->showSections(activePage->sections, count);
 }
 void Main::setSongs(char songs[][MAX_SONG_NAME], int count) {
   songsListSize = count;
@@ -260,21 +273,21 @@ void Main::setSongs(char songs[][MAX_SONG_NAME], int count) {
     strcpy(songsList[i], songs[i]);
     DEBUG_LOG_VALUE("songs changed: ", songsList[i]);
   }
-  // activePage.showSongs(songsList, count);
+  // activePage->showSongs(songsList, count);
 }
 void Main::setSongDurations(int durations[], int count) {
   // for (int i = 0; i < count; i++) {
   //   songDurations[i] = durations[i];
   // DEBUG_LOG_VALUE("durations changed: ", songDurations);
   // }
-  // activePage.showSongDurations(songDurations, count);
+  // activePage->showSongDurations(songDurations, count);
 }
 void Main::setSongColors(char colors[][MAX_SONG_NAME], int count) {
   // for (int i = 0; i < count; i++) {
   //   strcpy(songColors[i], colors[i]);
   //   DEBUG_LOG_VALUE("Song colors changed: ", songColors[i]);
   // }
-  // activePage.showSongColors(songColors, count);
+  // activePage->showSongColors(songColors, count);
 }
 
 
@@ -283,7 +296,7 @@ void Main::setCCReceived(uint8_t channel, uint8_t control, uint8_t value) {
   DEBUG_LOG(control);
   DEBUG_LOG(" Value: ");
   DEBUG_LOGLN(value);
-  activePage.checkLeds(channel, control, value);
+  activePage->checkLeds(channel, control, value);
 }
 
 
@@ -296,6 +309,17 @@ void Main::configureButton(uint8_t user_mode, uint8_t controlNum, uint8_t contro
   user_mode++; // Décalage d'index
   pages[user_mode].setButtonControl(controlNum, controlType[control_type], control_cc, control_ch, isCustom, toggled);
   jsonManager.writeJSONControl(user_mode, controlNum, control_type, control_cc, control_ch, isCustom, toggled);
+
+  // Mise à jour de l'affichage si la page active correspond
+  if (activePage == &pages[user_mode]) {
+    mainPage.showButtonSprite(
+      false, // ou l'état réel du bouton si tu veux
+      controlNum,
+      getActionName(user_mode, controlNum),
+      getActionColor(user_mode, controlNum),
+      activePage->getLuminance(controlNum)
+    );
+  }
 }
 
 // void Main::configurePedal(uint8_t user_mode, uint8_t controlNum, uint8_t control_type, uint8_t control_cc, uint8_t control_ch, uint8_t isCustom, uint8_t toggled){
@@ -352,9 +376,9 @@ void Main::parseArrayItem(uint8_t itemType, char* strBuf, uint8_t listIndex, uin
 
   // switch (displayedItem) {
   //   case Setlist_Array_Item:
-  //     _main.setlistsListSize = listLength;
+  //     mainParser.setlistsListSize = listLength;
   //     for (int i = 0; i < MAX_SONG_NAME; i++) {
-  //       _main.setlistsList[listIndex][i] = strBuf[i];
+  //       mainParser.setlistsList[listIndex][i] = strBuf[i];
   //     }
   //   //     DEBUG_LOG("setlist: ");
   //   //     DEBUG_LOG(listIndex);
@@ -366,13 +390,13 @@ void Main::parseArrayItem(uint8_t itemType, char* strBuf, uint8_t listIndex, uin
   //     break;
 
   //   case Song_Array_Item:
-  //     _main.songsListSize = listLength;
+  //     mainParser.songsListSize = listLength;
   //     for (int i = 0; i < MAX_SONG_NAME; i++) {
-  //       _main.songsList[listIndex][i] = strBuf[i];
+  //       mainParser.songsList[listIndex][i] = strBuf[i];
   //     }
   //   //   DEBUG_LOG("songs: ");
   //   //   DEBUG_LOGLN(mainPage.songsList[listIndex]);
-  //     menuPage.createMenu(SONG_MENU, _main.activeSongIndex);
+  //     menuPage.createMenu(SONG_MENU, mainParser.activeSongIndex);
   //     break;
 
   //   default:

@@ -17,6 +17,7 @@ public:
     // Prototypes des fonctions
     void showRemainingTimeInSet(bool);
     void updateProgressBarFine(bool);
+    void updateProgressBar();
     void showNextSprite(bool );
     void showRemainingTimeInSong(bool);
     void showSongsCounter(bool);

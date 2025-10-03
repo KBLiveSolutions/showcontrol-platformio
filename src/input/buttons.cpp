@@ -3,47 +3,45 @@
 #include "buttons.h"
 #include "mux.h"
 #include "actions.h"
+#include "pedal.h"
 #include "../core/pages.h"
+#include "../osc/OSCReceive.h"
 
 const int b_pins[NUM_BUTTONS] = {2, 30, 30, 30, 30, 30, 30, 24, 25};
 
 const int longPressDuration = 1000; // ms, à ajuster
-ButtonState buttons[NUM_BUTTONS];
+ButtonState b[NUM_BUTTONS];
 
 
-void buttns::read()
+void Buttons::read()
 {
-  // Pour les 2 premiers boutons sur b_pins
-
-  for (uint8_t p = 0; p < 1; p++)
-  {
-    bool reading = digitalRead(b_pins[p]);
-  // ...
-    updateButton(p, reading);
-    if (wasShortPressed(p))
-    {
-      onShortButtonPress(p);
-    }
-    if (wasLongPressed(p))
-    {
-      onLongButtonPress(p);
-    }
-  }
+  
+  updateButton0();
 
   // Pour les 6 suivants sur le PCF
   for (uint8_t p = 0; p < 7; p++)
   {
     bool reading = readSensor(p);
     uint8_t idx = p + 1;
-  // ...
     updateButton(idx, reading);
-    if (wasShortPressed(idx))
-    {
-      onShortButtonPress(idx);
-    }
-    if (wasLongPressed(idx))
-    {
-      onLongButtonPress(idx);
+    if (wasShortPressed(idx)) onShortButtonPress(idx);
+    if (wasLongPressed(idx)) onLongButtonPress(idx);
+  }
+  for (uint8_t i = 0; i < 2; i++)
+  {
+    if (pedals[i].getType() == FOOTSWITCH || pedals[i].getType() == DUAL) {
+      bool reading = digitalRead(pedals[i].b_pin);
+      uint8_t idx = i + 8; // Pedals start at index 8
+      updateButton(idx, reading);
+      if (wasShortPressed(idx)) actions.onPedalPress(i);
+      if (wasLongPressed(idx)) actions.onLongPedalPress(i);
+    }    
+    if (pedals[i].getType() == DUAL) {
+      bool reading = digitalRead(pedals[i].a_pin);
+      uint8_t idx = i + 10; // Pedals start at index 8
+      updateButton(idx, reading);
+      if (wasShortPressed(idx)) actions.onPedalPress(i + 2);
+      if (wasLongPressed(idx)) actions.onLongPedalPress(i + 2);
     }
   }
 }
@@ -51,9 +49,34 @@ void buttns::read()
 
 
 
+void Buttons::updateButton0()
+{    
+    static unsigned long lastDebounceTime = 0;
+    static bool lastStableState = true; // true = relâché (pull-up)
+    const unsigned long debounceDelay = 20; // ms
 
+    bool reading = digitalRead(b_pins[0]);
 
-void buttns::updateButton(uint8_t idx, bool reading)
+    if (reading != lastStableState) {
+        lastDebounceTime = millis();
+        lastStableState = reading;
+    }
+
+    // Si l'état est stable depuis debounceDelay ms, on valide le changement
+    if ((millis() - lastDebounceTime) > debounceDelay) {
+        if (reading != b[0].currentState) {
+            if (millis() - lastOscTime < 10) {
+                DEBUG_LOGLN("Bouton 0 ignoré (protection post-OSC)");
+                return;
+            }
+            if (reading) actions.onLockButtonPress();
+            else actions.onLockButtonRelease();
+            b[0].currentState = reading;
+        }
+    }
+}
+
+void Buttons::updateButton(uint8_t idx, bool reading)
 {
   // Log de diagnostic pour traquer les appels hors limites
   if (idx >= NUM_BUTTONS) {
@@ -62,123 +85,80 @@ void buttns::updateButton(uint8_t idx, bool reading)
 
   unsigned long now = millis();
 
-  buttons[idx].lastState = buttons[idx].currentState;
-  buttons[idx].currentState = reading;
-
-  // Filtrage logiciel strict pour le bouton 0 : n'accepter un appui que si la pin reste LOW pendant 100 ms consécutives
+  b[idx].lastState = b[idx].currentState;
+  b[idx].currentState = reading;
   static unsigned long lowStartTime = 0;
-  if (idx == 0) {
-    if (!buttons[idx].currentState) { // LOW détecté
-      if (lowStartTime == 0) lowStartTime = now;
-      if ((now - lowStartTime) >= BUTTON0_CONFIRM_MS && buttons[idx].pressedTime == 0) {
-        Serial.print("Button pressed: ");
-        Serial.println(idx);
-        onButtonPress(idx);
-        buttons[idx].pressedTime = now;
-        buttons[idx].longPressEventFired = false;
-        buttons[idx].longPressHandled = false;
-        buttons[idx].shortPressEventPending = false;
-      }
-    } else { // Repassé HIGH
-      lowStartTime = 0;
-      if (buttons[idx].pressedTime != 0) {
-        onButtonRelease(idx);
-        if (!buttons[idx].longPressHandled) {
-          buttons[idx].shortPressEventPending = true;
-        }
-      }
-      buttons[idx].pressedTime = 0;
-      buttons[idx].longPressEventFired = false;
-      buttons[idx].longPressHandled = false;
-    }
-    return;
-  }
 
-  if (!buttons[idx].currentState) // Bouton appuyé (active bas)
+  if (!b[idx].currentState) // Bouton appuyé (active bas)
   {
-    if (buttons[idx].pressedTime == 0)
+    if (b[idx].pressedTime == 0)
     {
-      Serial.print("Button pressed: ");
-      Serial.println(idx);
-      onButtonPress(idx);
-      buttons[idx].pressedTime = now;
-      buttons[idx].longPressEventFired = false;
-      buttons[idx].longPressHandled = false;
-      buttons[idx].shortPressEventPending = false;
+      actions.press_button(idx);
+      b[idx].pressedTime = now;
+      b[idx].longPressEventFired = false;
+      b[idx].longPressHandled = false;
+      b[idx].shortPressEventPending = false;
     }
-    else if (!buttons[idx].longPressHandled &&
-         (now - buttons[idx].pressedTime) >= longPressDuration)
+    else if (!b[idx].longPressHandled &&
+         (now - b[idx].pressedTime) >= longPressDuration)
     {
-      buttons[idx].longPressEventFired = true;
-      buttons[idx].longPressHandled = true;
+      b[idx].longPressEventFired = true;
+      b[idx].longPressHandled = true;
     }
   }
   else // Bouton relâché
   {
-    if (buttons[idx].pressedTime != 0)
+    if (b[idx].pressedTime != 0)
     {
-      onButtonRelease(idx);
-      if (!buttons[idx].longPressHandled)
+      actions.release_button(idx);
+      if (!b[idx].longPressHandled)
       {
-        buttons[idx].shortPressEventPending = true;
+        b[idx].shortPressEventPending = true;
       }
     }
-    buttons[idx].pressedTime = 0;
-    buttons[idx].longPressEventFired = false;
-    buttons[idx].longPressHandled = false;
+    b[idx].pressedTime = 0;
+    b[idx].longPressEventFired = false;
+    b[idx].longPressHandled = false;
   }
 }
 
-bool buttns::wasShortPressed(uint8_t idx)
+bool Buttons::wasShortPressed(uint8_t idx)
 {
-    if (buttons[idx].shortPressEventPending)
+    if (b[idx].shortPressEventPending)
     {
-        buttons[idx].shortPressEventPending = false;
+        b[idx].shortPressEventPending = false;
         return true;
     }
     return false;
 }
 
-bool buttns::wasLongPressed(uint8_t idx)
+bool Buttons::wasLongPressed(uint8_t idx)
 {
-    if (buttons[idx].longPressEventFired)
+    if (b[idx].longPressEventFired)
     {
-        buttons[idx].longPressEventFired = false;
+        b[idx].longPressEventFired = false;
         return true;
     }
     return false;
 }
 
-void buttns::onShortButtonPress(uint8_t p)
+void Buttons::onShortButtonPress(uint8_t p)
 {
-  Serial.print("Short button pressed: ");
-  Serial.println(p);
   if (p >= NUM_BUTTONS) return;
-  if (p == 6) onEncoderButtonPress();
-  // else if (p > 0) onButtonShortPress(p - 1); // p-1 pour les boutons PCF, mais jamais pour p==0
+  if (p == 6) actions.onEncoderButtonPress();
+  else if (p > 0) actions.onButtonShortPress(p - 1); // p-1 pour les boutons PCF, mais jamais pour p==0
 }
 
-void buttns::onLongButtonPress(uint8_t p)
+void Buttons::onLongButtonPress(uint8_t p)
 {
   if (p >= NUM_BUTTONS) return;
   // if (p == 0) onLockButtonLongPress();
-  if (p == 6) onEncoderButtonLongPress();
-  else onButtonLongPress(p - 1); // p-1 pour les boutons PCF
+  if (p == 6) actions.onEncoderButtonLongPress();
+  else actions.onButtonLongPress(p - 1); // p-1 pour les boutons PCF
 }
+long unsigned int lastPressTime = 0;
 
-void buttns::onButtonPress(uint8_t idx)
-{
-  if (idx >= NUM_BUTTONS) return;
-  press_button(idx);
-}
-
-void buttns::onButtonRelease(uint8_t idx)
-{
-  if (idx >= NUM_BUTTONS) return;
-  release_button(idx);
-}
-
-void buttns::setup()
+void Buttons::setup()
 {
   for (uint8_t p = 0; p < 1; p++)
   {
@@ -186,3 +166,5 @@ void buttns::setup()
   }
   setupMUX();
 }
+
+Buttons buttons;

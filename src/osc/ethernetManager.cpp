@@ -132,15 +132,15 @@ void EthernetManager::read() {
   }
   
   // DIAGNOSTIC minimal
-  if (debugOn && (packetsReceived > 10 || packetsProcessed > 10)) {
-    DEBUG_LOG("R:");
-    DEBUG_LOG(packetsReceived);
-    DEBUG_LOG(" P:");
-    DEBUG_LOG(packetsProcessed);
-    DEBUG_LOG(" Q:");
-    DEBUG_LOG(queueCount);
-    DEBUG_LOG("/");
-    DEBUG_LOGLN(UDP_QUEUE_SIZE);
+  if (packetsReceived > 10 || packetsProcessed > 10) {
+    DEBUG_ETHERNET_LOG("R:");
+    DEBUG_ETHERNET_LOG(packetsReceived);
+    DEBUG_ETHERNET_LOG(" P:");
+    DEBUG_ETHERNET_LOG(packetsProcessed);
+    DEBUG_ETHERNET_LOG(" Q:");
+    DEBUG_ETHERNET_LOG(queueCount);
+    DEBUG_ETHERNET_LOG("/");
+    DEBUG_ETHERNET_LOGLN(UDP_QUEUE_SIZE);
   }
   
   EthernetBonjour.run();
@@ -170,23 +170,23 @@ void EthernetManager::read() {
     lastNetworkCheck = currentMillis;
     if (Ethernet.linkStatus() != LinkOFF) {
       checkEthernetConnection();
-      if (activePage == SPLASH_PAGE) showLookingForServer();
+      if (activePage == &SPLASH_PAGE) showLookingForServer();
     } else {
       globalPage.showEthSprite(settings.MIDIConnected, -1);
     }
   }
   
   // Debug périodique des services (toutes les 8 secondes - RÉDUIT)
-  if (debugOn && currentMillis - lastServiceDebug >= 8000) {
+  if (currentMillis - lastServiceDebug >= 8000) {
     lastServiceDebug = currentMillis;
     if (totalServiceCount > 0) {
-      DEBUG_LOG("Active services: ");
-      DEBUG_LOG(totalServiceCount);
-      DEBUG_LOG(" (Ableset: ");
-      DEBUG_LOG(serviceCounts[0]);
-      DEBUG_LOG(", ShowControl: ");
-      DEBUG_LOG(serviceCounts[1]);
-      DEBUG_LOGLN(")");
+      DEBUG_ETHERNET_LOG("Active services: ");
+      DEBUG_ETHERNET_LOG(totalServiceCount);
+      DEBUG_ETHERNET_LOG(" (Ableset: ");
+      DEBUG_ETHERNET_LOG(serviceCounts[0]);
+      DEBUG_ETHERNET_LOG(", ShowControl: ");
+      DEBUG_ETHERNET_LOG(serviceCounts[1]);
+      DEBUG_ETHERNET_LOGLN(")");
     }
   }
   
@@ -199,7 +199,7 @@ int EthernetManager::getServiceTypeIndex(ServiceType type) {
 }
 
 bool EthernetManager::isServiceKnown(ServiceType type, const IPAddress& ip, uint16_t port) {
-  // DEBUG_LOG("====>>> Service ");
+  // DEBUG_ETHERNET_LOG("====>>> Service ");
   const unsigned long currentTime = millis(); // const pour optimisation
   
   for (int i = 0; i < totalServiceCount; i++) {
@@ -207,23 +207,23 @@ bool EthernetManager::isServiceKnown(ServiceType type, const IPAddress& ip, uint
         discoveredServices[i].ip == ip &&
         discoveredServices[i].port == port) {
       discoveredServices[i].lastSeen = currentTime;
-      // DEBUG_LOGLN("Known");
+      // DEBUG_ETHERNET_LOGLN("Known");
       return true;
     }
   }
-  // DEBUG_LOGLN("NOT Known");
+  // DEBUG_ETHERNET_LOGLN("NOT Known");
   return false;
 }
 
 // Add a new service
 void EthernetManager::addService(ServiceType type, const IPAddress& ip, uint16_t port) {
-  DEBUG_LOG("Attempting to add service: ");
-  DEBUG_LOG(ip);
-  DEBUG_LOG(":");
-  DEBUG_LOG(port);
-  DEBUG_LOG(" (");
-  DEBUG_LOG((type == ABLESETSRV) ? "Ableset" : "ShowControl");
-  DEBUG_LOGLN(")");
+  DEBUG_ETHERNET_LOG("Attempting to add service: ");
+  DEBUG_ETHERNET_LOG(ip);
+  DEBUG_ETHERNET_LOG(":");
+  DEBUG_ETHERNET_LOG(port);
+  DEBUG_ETHERNET_LOG(" (");
+  DEBUG_ETHERNET_LOG((type == ABLESETSRV) ? "Ableset" : "ShowControl");
+  DEBUG_ETHERNET_LOGLN(")");
   
   // Pour Ableset, toujours n'utiliser qu'un service par IP, port 39051
   uint16_t servicePort = (type == ABLESETSRV) ? 39051 : port;
@@ -231,15 +231,15 @@ void EthernetManager::addService(ServiceType type, const IPAddress& ip, uint16_t
     if (discoveredServices[i].serviceType == type &&
         discoveredServices[i].ip == ip &&
         discoveredServices[i].port == servicePort) {
-      DEBUG_LOG("Service already exists: ");
-      DEBUG_LOG(ip);
-      DEBUG_LOG(":");
-      DEBUG_LOG(servicePort);
-      DEBUG_LOG(" (");
-      DEBUG_LOG((type == ABLESETSRV) ? "Ableset" : "ShowControl");
-      DEBUG_LOG(") - updating lastSeen");
+      DEBUG_ETHERNET_LOG("Service already exists: ");
+      DEBUG_ETHERNET_LOG(ip);
+      DEBUG_ETHERNET_LOG(":");
+      DEBUG_ETHERNET_LOG(servicePort);
+      DEBUG_ETHERNET_LOG(" (");
+      DEBUG_ETHERNET_LOG((type == ABLESETSRV) ? "Ableset" : "ShowControl");
+      DEBUG_ETHERNET_LOG(") - updating lastSeen");
       discoveredServices[i].lastSeen = millis();
-      DEBUG_LOGLN("");
+      DEBUG_ETHERNET_LOGLN("");
       return; // Service déjà présent, ne pas ajouter
     }
   }
@@ -255,36 +255,36 @@ void EthernetManager::addService(ServiceType type, const IPAddress& ip, uint16_t
     totalServiceCount++;
 
     if (type == ABLESETSRV) {
-      DEBUG_LOG_VALUE("====>>> Ableset  connected port : ", servicePort);
+      DEBUG_ETHERNET_LOG_VALUE("====>>> Ableset  connected port : ", servicePort);
       sendOSCAblesetSubscribe();
-      DEBUG_LOGLN("Ableset service added, waiting for /subscribed confirmation");
+      DEBUG_ETHERNET_LOGLN("Ableset service added, waiting for /subscribed confirmation");
     } else {
-      DEBUG_LOG_VALUE("====>>> ShowControl connected port : ", port);
+      DEBUG_ETHERNET_LOG_VALUE("====>>> ShowControl connected port : ", port);
       sendOSCShowControl("/showcontrol/getValues");
     }
 
     globalPage.showEthSprite(settings.MIDIConnected, serviceCounts[0]);
-    DEBUG_LOG("Service added: totalServiceCount=");
-    DEBUG_LOG(totalServiceCount);
-    DEBUG_LOG(", serviceCounts[0]=");
-    DEBUG_LOG(serviceCounts[0]);
-    DEBUG_LOG(", serviceCounts[1]=");
-    DEBUG_LOG(serviceCounts[1]);
-    DEBUG_LOGLN("");
+    DEBUG_ETHERNET_LOG("Service added: totalServiceCount=");
+    DEBUG_ETHERNET_LOG(totalServiceCount);
+    DEBUG_ETHERNET_LOG(", serviceCounts[0]=");
+    DEBUG_ETHERNET_LOG(serviceCounts[0]);
+    DEBUG_ETHERNET_LOG(", serviceCounts[1]=");
+    DEBUG_ETHERNET_LOG(serviceCounts[1]);
+    DEBUG_ETHERNET_LOGLN("");
     listAllServices();
   } else {
-    DEBUG_LOG("Cannot add service - limits reached: serviceCounts[");
-    DEBUG_LOG(index);
-    DEBUG_LOG("]=");
-    DEBUG_LOG(serviceCounts[index]);
-    DEBUG_LOG(", totalServiceCount=");
-    DEBUG_LOGLN(totalServiceCount);
+    DEBUG_ETHERNET_LOG("Cannot add service - limits reached: serviceCounts[");
+    DEBUG_ETHERNET_LOG(index);
+    DEBUG_ETHERNET_LOG("]=");
+    DEBUG_ETHERNET_LOG(serviceCounts[index]);
+    DEBUG_ETHERNET_LOG(", totalServiceCount=");
+    DEBUG_ETHERNET_LOGLN(totalServiceCount);
   }
 }
 
 // Function to handle new service discovery
 void EthernetManager::initServer(ServiceType type, const IPAddress& ip, uint16_t port) {
-    // DEBUG_LOG("New service discovered (");
+    // DEBUG_ETHERNET_LOG("New service discovered (");
   if (!isServiceKnown(type, ip, port)) {
     addService(type, ip, port);
   }
@@ -292,11 +292,11 @@ void EthernetManager::initServer(ServiceType type, const IPAddress& ip, uint16_t
 
 // Helper to remove disconnected services
 void EthernetManager::removeService(int index, ServiceType type) {
-  DEBUG_LOG("Removing service at index ");
-  DEBUG_LOG(index);
-  DEBUG_LOG(" (type: ");
-  DEBUG_LOG((type == ABLESETSRV) ? "Ableset" : "ShowControl");
-  DEBUG_LOGLN(")");
+  DEBUG_ETHERNET_LOG("Removing service at index ");
+  DEBUG_ETHERNET_LOG(index);
+  DEBUG_ETHERNET_LOG(" (type: ");
+  DEBUG_ETHERNET_LOG((type == ABLESETSRV) ? "Ableset" : "ShowControl");
+  DEBUG_ETHERNET_LOGLN(")");
   
   int serviceTypeIndex = getServiceTypeIndex(type);
   for (int j = index; j < totalServiceCount - 1; j++) {
@@ -305,17 +305,17 @@ void EthernetManager::removeService(int index, ServiceType type) {
   serviceCounts[serviceTypeIndex]--; // Reduce service count
   totalServiceCount--; // Décrémenter le nombre total de services
   
-  DEBUG_LOG("After removal: totalServiceCount=");
-  DEBUG_LOG(totalServiceCount);
-  DEBUG_LOG(", serviceCounts[0]=");
-  DEBUG_LOG(serviceCounts[0]);
-  DEBUG_LOG(", serviceCounts[1]=");
-  DEBUG_LOGLN(serviceCounts[1]);
+  DEBUG_ETHERNET_LOG("After removal: totalServiceCount=");
+  DEBUG_ETHERNET_LOG(totalServiceCount);
+  DEBUG_ETHERNET_LOG(", serviceCounts[0]=");
+  DEBUG_ETHERNET_LOG(serviceCounts[0]);
+  DEBUG_ETHERNET_LOG(", serviceCounts[1]=");
+  DEBUG_ETHERNET_LOGLN(serviceCounts[1]);
   
   // Mettre à jour l'affichage avec le nouveau nombre de services
   globalPage.showEthSprite(settings.MIDIConnected, serviceCounts[0]);
-  DEBUG_LOG("Service count updated to: ");
-  DEBUG_LOGLN(serviceCounts[0]);
+  DEBUG_ETHERNET_LOG("Service count updated to: ");
+  DEBUG_ETHERNET_LOGLN(serviceCounts[0]);
 }
 
 // Check for disconnected services
@@ -323,13 +323,13 @@ void EthernetManager::checkForDisconnectedServices() {
   unsigned long currentMillis = millis();
   for (int i = 0; i < totalServiceCount; i++) {
     if (currentMillis - discoveredServices[i].lastSeen > SERVICE_TIMEOUT_MS) {  // CHANGÉ: 10000 -> SERVICE_TIMEOUT_MS
-      DEBUG_LOG("Service disconnected: ");
-      DEBUG_LOG(discoveredServices[i].ip);
-      DEBUG_LOG(":");
-      DEBUG_LOG(discoveredServices[i].port);
-      DEBUG_LOG(" (");
-      DEBUG_LOG((discoveredServices[i].serviceType == ABLESETSRV) ? "Ableset" : "ShowControl");
-      DEBUG_LOGLN(")");
+      DEBUG_ETHERNET_LOG("Service disconnected: ");
+      DEBUG_ETHERNET_LOG(discoveredServices[i].ip);
+      DEBUG_ETHERNET_LOG(":");
+      DEBUG_ETHERNET_LOG(discoveredServices[i].port);
+      DEBUG_ETHERNET_LOG(" (");
+      DEBUG_ETHERNET_LOG((discoveredServices[i].serviceType == ABLESETSRV) ? "Ableset" : "ShowControl");
+      DEBUG_ETHERNET_LOGLN(")");
 
       removeService(i, discoveredServices[i].serviceType);
       i--; // Adjust index after removal
@@ -356,9 +356,9 @@ void EthernetManager::updateLastSeen(ServiceType type, IPAddress remoteIP) {
 }
 
 void EthernetManager::clearAllServices() {
-  DEBUG_LOG("Clearing all discovered services (was: ");
-  DEBUG_LOG(totalServiceCount);
-  DEBUG_LOGLN(" services)");
+  DEBUG_ETHERNET_LOG("Clearing all discovered services (was: ");
+  DEBUG_ETHERNET_LOG(totalServiceCount);
+  DEBUG_ETHERNET_LOGLN(" services)");
   
   totalServiceCount = 0;
   serviceCounts[0] = 0;  // ABLESETSRV
@@ -367,17 +367,20 @@ void EthernetManager::clearAllServices() {
   // Optionnel : réinitialiser le tableau (pas strictement nécessaire)
   memset(discoveredServices, 0, sizeof(discoveredServices));
   
-  DEBUG_LOGLN("All services cleared");
+  DEBUG_ETHERNET_LOGLN("All services cleared");
 }
 
 void EthernetManager::showIP(int *ip) {
-  DEBUG_LOGLN("Printing ip ");
+  DEBUG_ETHERNET_LOGLN("Printing ip ");
   static char buf[16];
   sprintf(buf, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-  if(activePage == SPLASH_PAGE) splashPage.showSplashSub1Sprite(buf, defaultTxtColor);
-  globalPage.showEthSprite(settings.MIDIConnected, 0);
-  DEBUG_LOGLN(buf);
-  DEBUG_LOGLN("IP printed");
+  if(activePage == &SPLASH_PAGE) {
+    showLookingForServer();
+    splashPage.showSplashSub1Sprite(buf, defaultTxtColor);
+    globalPage.showEthSprite(settings.MIDIConnected, 0);
+  }
+  DEBUG_ETHERNET_LOGLN(buf);
+  DEBUG_ETHERNET_LOGLN("IP printed");
 }
 
 void EthernetManager::setIp(int *ip) {
@@ -392,15 +395,15 @@ void EthernetManager::setIp(int *ip) {
   
   // Appliquer la nouvelle IP directement si Ethernet est initialisé
   if (setupEthernetDone) {
-    DEBUG_LOGLN("Applying new IP to existing Ethernet connection");
+    DEBUG_ETHERNET_LOGLN("Applying new IP to existing Ethernet connection");
     Ethernet.setLocalIP(manualIP);
   
     
     // Redémarrer UDP avec le nouveau port si nécessaire
     showcontrolUdp.stop();
     if (showcontrolUdp.begin(showcontrolLocalPort)) {
-      DEBUG_LOG("UDP restarted on new IP: ");
-      DEBUG_LOGLN(showcontrolLocalPort);
+      DEBUG_ETHERNET_LOG("UDP restarted on new IP: ");
+      DEBUG_ETHERNET_LOGLN(showcontrolLocalPort);
     }
     
     // Redémarrer EthernetBonjour avec la nouvelle IP
@@ -414,13 +417,13 @@ void EthernetManager::setPort(int32_t port) {
   jsonManager.writeOption("port", port);
   
   if (setupEthernetDone) {
-    DEBUG_LOGLN("Applying new port to existing Ethernet connection");
+    DEBUG_ETHERNET_LOGLN("Applying new port to existing Ethernet connection");
     
     // Redémarrer UDP avec le nouveau port
     showcontrolUdp.stop();
     if (showcontrolUdp.begin(showcontrolLocalPort)) {
-      DEBUG_LOG("UDP restarted on new port: ");
-      DEBUG_LOGLN(showcontrolLocalPort);
+      DEBUG_ETHERNET_LOG("UDP restarted on new port: ");
+      DEBUG_ETHERNET_LOGLN(showcontrolLocalPort);
     }
     
     // Redémarrer EthernetBonjour avec le nouveau port
@@ -429,7 +432,7 @@ void EthernetManager::setPort(int32_t port) {
 }
 
 void EthernetManager::setDHCP(int data){
-  DEBUG_LOG_VALUE("DHCP: ", data);
+  DEBUG_ETHERNET_LOG_VALUE("DHCP: ", data);
   useDHCP = data;
   jsonManager.writeOption("useDHCP", data);
 }
@@ -453,12 +456,12 @@ void EthernetManager::setSubnet(int *ip) {
 }
 
 void EthernetManager::discoverOSCServer(){
-  DEBUG_LOGLN("Discovering OSC server");
+  DEBUG_ETHERNET_LOGLN("Discovering OSC server");
   EthernetBonjour.startDiscoveringService("_osc", MDNSServiceUDP, 0);
 }
 
 void EthernetManager::restartBonjour() {
-  DEBUG_LOGLN("Restarting EthernetBonjour with new IP");
+  DEBUG_ETHERNET_LOGLN("Restarting EthernetBonjour with new IP");
   
   // Vider la liste des services découverts pour éviter les conflits
   clearAllServices();
@@ -474,7 +477,7 @@ void EthernetManager::restartBonjour() {
   // Redémarrer la découverte des services OSC
   discoverOSCServer();
   
-  DEBUG_LOGLN("EthernetBonjour restarted successfully");
+  DEBUG_ETHERNET_LOGLN("EthernetBonjour restarted successfully");
 }
 
 void EthernetManager::showLookingForServer() {
@@ -495,37 +498,37 @@ int EthernetManager::getActiveServiceCount() {
 
 void EthernetManager::setup() {
 IPAddress manualIP(jsonManager.getIPNum(0), jsonManager.getIPNum(1), jsonManager.getIPNum(2), jsonManager.getIPNum(3));
-  DEBUG_LOGLN("ETHERNET SETUP");
+  DEBUG_ETHERNET_LOGLN("ETHERNET SETUP");
     // delay(1000);
   globalPage.showEthSprite(settings.MIDIConnected, -1);
   Ethernet.init(17); 
   if (Ethernet.linkStatus() == LinkOFF) {
-    DEBUG_LOGLN("LinkOff");
+    DEBUG_ETHERNET_LOGLN("LinkOff");
   } 
   else {
-    DEBUG_LOGLN("Link ON");
+    DEBUG_ETHERNET_LOGLN("Link ON");
     if(useDHCP) {
-      DEBUG_LOGLN("Start DHCP");
+      DEBUG_ETHERNET_LOGLN("Start DHCP");
       if (Ethernet.begin(mac) == 0) {
-        DEBUG_LOGLN("DHCP Failed");
+        DEBUG_ETHERNET_LOGLN("DHCP Failed");
         Ethernet.begin(mac, manualIP, myDns, gateway, subnet);
       }
       else {
-        DEBUG_LOGLN("DHCP Success");
+        DEBUG_ETHERNET_LOGLN("DHCP Success");
       }
     }
     else {
-      DEBUG_LOGLN("Manual IP");
+      DEBUG_ETHERNET_LOGLN("Manual IP");
       Ethernet.setLocalIP(manualIP);
       Ethernet.begin(mac, manualIP, myDns, gateway, subnet);
     }
     int buf[4] = {manualIP[0], manualIP[1], manualIP[2], manualIP[3]};
     // showcontrolUdp.begin(showcontrolLocalPort);
     if (showcontrolUdp.begin(showcontrolLocalPort)) {
-  DEBUG_LOG("UDP started successfully on port : ");
-  DEBUG_LOGLN(showcontrolLocalPort);
+  DEBUG_ETHERNET_LOG("UDP started successfully on port : ");
+  DEBUG_ETHERNET_LOGLN(showcontrolLocalPort);
 } else {
-  DEBUG_LOGLN("UDP start failed");
+  DEBUG_ETHERNET_LOGLN("UDP start failed");
 }
     setupEthernetDone = true;
     showIP(buf);
@@ -541,11 +544,11 @@ void EthernetManager::pingServices(){
   
   // Ping des services ShowControl connus
   if (serviceCounts[1] > 0) {  // ShowControl services
-    DEBUG_LOGLN("Pinging known ShowControl services");
+    DEBUG_ETHERNET_LOGLN("Pinging known ShowControl services");
     sendOSCShowControl("/showcontrol/ping");
   } else {
     // Si aucun service ShowControl connu, envoyer un ping global pour découvrir
-    DEBUG_LOGLN("No ShowControl services known, sending discovery ping");
+    DEBUG_ETHERNET_LOGLN("No ShowControl services known, sending discovery ping");
     sendOSCShowControl("/showcontrol/ping");
   }
 }
@@ -558,7 +561,7 @@ void EthernetManager::checkEthernetConnection(){
     }
   } 
   else {
-    DEBUG_LOGLN("LinkOff");
+    DEBUG_ETHERNET_LOGLN("LinkOff");
       // showSprite("Link Off", defaultTxtColor, sub2Sprite);
       setupEthernetDone = false;  // Flag the setup to rerun when cable is connected
   }
@@ -575,32 +578,32 @@ void serviceFoundCallback(const char* type, MDNSServiceProtocol /*proto*/, const
   } 
   else {
     IPAddress ip(ipAddr[0], ipAddr[1], ipAddr[2], ipAddr[3]);
-    DEBUG_LOG("Service found: ");
-    DEBUG_LOG(name);
-    DEBUG_LOG(" at IP: ");
-    DEBUG_LOG(ip);
-    DEBUG_LOG(" on port: ");
-    DEBUG_LOG(port);
-    DEBUG_LOG(" (localIP: ");
-    DEBUG_LOG(manualIP);
-    DEBUG_LOGLN(")");
+    DEBUG_ETHERNET_LOG("Service found: ");
+    DEBUG_ETHERNET_LOG(name);
+    DEBUG_ETHERNET_LOG(" at IP: ");
+    DEBUG_ETHERNET_LOG(ip);
+    DEBUG_ETHERNET_LOG(" on port: ");
+    DEBUG_ETHERNET_LOG(port);
+    DEBUG_ETHERNET_LOG(" (localIP: ");
+    DEBUG_ETHERNET_LOG(manualIP);
+    DEBUG_ETHERNET_LOGLN(")");
     
     if(port > 100 && ipAddr[0] == manualIP[0] && ipAddr[1] == manualIP[1] && ipAddr[2] == manualIP[2]){
-      DEBUG_LOGLN("IP filter passed, processing service...");
+      DEBUG_ETHERNET_LOGLN("IP filter passed, processing service...");
       // Vérification directe du nom du service
       if(strcmp(name, "showcontrol") == 0) {
-        DEBUG_LOGLN("Found ShowControl service");
+        DEBUG_ETHERNET_LOGLN("Found ShowControl service");
         ethernet.initServer(SHOWCONTROLSRV, ip, port);
       }
       
       if (txtContent) {
-        DEBUG_LOGLN("Processing txtContent for Ableset service...");
+        DEBUG_ETHERNET_LOGLN("Processing txtContent for Ableset service...");
         char buf[256];
         char len = *txtContent++; 
         int i=0;
         const char ablesetString[] = "server=ableset";  // const pour optimisation
-        DEBUG_LOG("txtContent length: ");
-        DEBUG_LOGLN(len);
+        DEBUG_ETHERNET_LOG("txtContent length: ");
+        DEBUG_ETHERNET_LOGLN(len);
         while (len) {
           i = 0;
           while (len--)
@@ -608,73 +611,73 @@ void serviceFoundCallback(const char* type, MDNSServiceProtocol /*proto*/, const
           buf[i] = '\0';
           len = *txtContent++;
           
-          DEBUG_LOG("Found txt record: ");
-          DEBUG_LOGLN(buf);
+          DEBUG_ETHERNET_LOG("Found txt record: ");
+          DEBUG_ETHERNET_LOGLN(buf);
           
           if(strcmp(buf, ablesetString) == 0) {
-            DEBUG_LOGLN("Found Ableset service!");
+            DEBUG_ETHERNET_LOGLN("Found Ableset service!");
             ethernet.initServer(ABLESETSRV, ip, port);
           }
         }
       }
     } else {
-      DEBUG_LOG("IP filter rejected service (port: ");
-      DEBUG_LOG(port);
-      DEBUG_LOG(", subnet mismatch or port <= 100)");
-      DEBUG_LOGLN("");
+      DEBUG_ETHERNET_LOG("IP filter rejected service (port: ");
+      DEBUG_ETHERNET_LOG(port);
+      DEBUG_ETHERNET_LOG(", subnet mismatch or port <= 100)");
+      DEBUG_ETHERNET_LOGLN("");
     }
   }
 }
 
 // Debug function to list all known services
 void EthernetManager::listAllServices() {
-  DEBUG_LOG("=== ALL SERVICES LIST (totalServiceCount=");
-  DEBUG_LOG(totalServiceCount);
-  DEBUG_LOG(") ===");
+  DEBUG_ETHERNET_LOG("=== ALL SERVICES LIST (totalServiceCount=");
+  DEBUG_ETHERNET_LOG(totalServiceCount);
+  DEBUG_ETHERNET_LOG(") ===");
   
   if (totalServiceCount == 0) {
-    DEBUG_LOGLN(" - NO SERVICES");
+    DEBUG_ETHERNET_LOGLN(" - NO SERVICES");
     return;
   }
   
   for (int i = 0; i < totalServiceCount; i++) {
-    DEBUG_LOG("Service ");
-    DEBUG_LOG(i);
-    DEBUG_LOG(": Type=");
-    DEBUG_LOG((discoveredServices[i].serviceType == ABLESETSRV) ? "Ableset" : "ShowControl");
-    DEBUG_LOG(", IP=");
-    DEBUG_LOG(discoveredServices[i].ip);
-    DEBUG_LOG(", Port=");
-    DEBUG_LOG(discoveredServices[i].port);
-    DEBUG_LOG(", Subscribed=");
-    DEBUG_LOG(discoveredServices[i].subscribed ? "YES" : "NO");
-    DEBUG_LOG(", LastSeen=");
-    DEBUG_LOG(millis() - discoveredServices[i].lastSeen);
-    DEBUG_LOGLN("ms ago");
+    DEBUG_ETHERNET_LOG("Service ");
+    DEBUG_ETHERNET_LOG(i);
+    DEBUG_ETHERNET_LOG(": Type=");
+    DEBUG_ETHERNET_LOG((discoveredServices[i].serviceType == ABLESETSRV) ? "Ableset" : "ShowControl");
+    DEBUG_ETHERNET_LOG(", IP=");
+    DEBUG_ETHERNET_LOG(discoveredServices[i].ip);
+    DEBUG_ETHERNET_LOG(", Port=");
+    DEBUG_ETHERNET_LOG(discoveredServices[i].port);
+    DEBUG_ETHERNET_LOG(", Subscribed=");
+    DEBUG_ETHERNET_LOG(discoveredServices[i].subscribed ? "YES" : "NO");
+    DEBUG_ETHERNET_LOG(", LastSeen=");
+    DEBUG_ETHERNET_LOG(millis() - discoveredServices[i].lastSeen);
+    DEBUG_ETHERNET_LOGLN("ms ago");
   }
   
-  DEBUG_LOG("Counts: Ableset=");
-  DEBUG_LOG(serviceCounts[0]);
-  DEBUG_LOG(", ShowControl=");
-  DEBUG_LOG(serviceCounts[1]);
-  DEBUG_LOG(", Total=");
-  DEBUG_LOGLN(totalServiceCount);
+  DEBUG_ETHERNET_LOG("Counts: Ableset=");
+  DEBUG_ETHERNET_LOG(serviceCounts[0]);
+  DEBUG_ETHERNET_LOG(", ShowControl=");
+  DEBUG_ETHERNET_LOG(serviceCounts[1]);
+  DEBUG_ETHERNET_LOG(", Total=");
+  DEBUG_ETHERNET_LOGLN(totalServiceCount);
   
   // Vérification de cohérence
   int calculatedTotal = serviceCounts[0] + serviceCounts[1];
   if (calculatedTotal != totalServiceCount) {
-    DEBUG_LOG("WARNING: Count mismatch! Calculated=");
-    DEBUG_LOG(calculatedTotal);
-    DEBUG_LOG(", Actual=");
-    DEBUG_LOGLN(totalServiceCount);
+    DEBUG_ETHERNET_LOG("WARNING: Count mismatch! Calculated=");
+    DEBUG_ETHERNET_LOG(calculatedTotal);
+    DEBUG_ETHERNET_LOG(", Actual=");
+    DEBUG_ETHERNET_LOGLN(totalServiceCount);
   }
   
-  DEBUG_LOGLN("=== END SERVICES LIST ===");
+  DEBUG_ETHERNET_LOGLN("=== END SERVICES LIST ===");
 }
 
 // Force une vérification immédiate des services (utile pour les tests)
 void EthernetManager::forceServiceCheck() {
-  DEBUG_LOGLN("Forcing immediate service check...");
+  DEBUG_ETHERNET_LOGLN("Forcing immediate service check...");
   checkForDisconnectedServices();
   // pingServices();
   // Mettre à jour l'affichage

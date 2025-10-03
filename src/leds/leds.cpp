@@ -1,5 +1,4 @@
-
-
+// #define NEOPIXEL_DISABLED
 #include "leds.h"
 #include "led_utils.h"
 #include "../core/settingsParser.h"
@@ -67,7 +66,9 @@ void Led::showPixel(uint8_t r, uint8_t g, uint8_t b) {
       strip.setPixelColor(index, strip.Color(adjustedR, adjustedG, adjustedB));
     }
   }
-  strip.show();
+  #ifndef NEOPIXEL_DISABLED
+strip.show();
+#endif
 }
 
 void Led::show_color() {
@@ -123,7 +124,9 @@ void leds::setup() {
   Serial.println("Starting LED initialization...");
   Serial.flush();
   strip.begin();
-  strip.show(); // Éteint toutes les LEDs
+  #ifndef NEOPIXEL_DISABLED
+strip.show();
+#endif // Éteint toutes les LEDs
   Serial.println("Initializing LED objects...");
   Serial.flush();
   for (uint8_t i = 0; i < NUM_LEDS; i++) {

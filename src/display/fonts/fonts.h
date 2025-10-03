@@ -2,9 +2,11 @@
 #include "GontserratRegular24.h"
 #include "GontserratLight24.h"
 #include "GontserratLight48.h"
+#include "GontserratRegular16.h"
 #include "1_6_Free_Fonts.h"
 #define FONT20 GontserratRegular24
 #define FONT12 GontserratLight24
+#define FONT10 GontserratRegular16
 #define FONT32 GontserratLight48
 #define GFXFF 1
 

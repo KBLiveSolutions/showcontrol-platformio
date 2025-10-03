@@ -2,6 +2,7 @@
 #include "../display/pages/globalPage.h"
 #include "pages.h"
 #include "../leds/leds.h"
+#include "../display/pages/mainPage.h"
 
 
 Global global;
@@ -9,7 +10,7 @@ Global global;
 
 void Global::setLoopEnabled(bool enabled){
     loopEnabled = enabled;
-    if(activePage == pages[0]) activePage.updateLoopSprite();
+    if(activePage == &pages[0]) activePage->updateLoopSprite();
 };
 
 void Global::setLoopStart(float start){
@@ -36,7 +37,10 @@ void Global::setCurrentBeat(int beat){
     current_beat = beat;
     DEBUG_LOG("Current beat set to: ");
     DEBUG_LOGLN(current_beat);  
+    DEBUG_LOG("Beats position set to: ");   
+    DEBUG_LOGLN(global.beatsPosition);
     globalPage.showCounter();
+    mainPage.updateProgressBar();
 };
 void Global::setSigNumerator(int numerator){
     sig_numerator = numerator;
@@ -57,6 +61,6 @@ void Global::setTempo(int newTempo){
 };
 void Global::setIsPlaying(bool playing){
     isPlaying = playing;
-    if(activePage == pages[0]) activePage.updatePlaySprite();
+    if(activePage == &pages[0]) activePage->updatePlaySprite();
 };
 

@@ -2,12 +2,18 @@
 #include "../../config/consts.h"
 #include "../../core/utils.h"
 #include "../../core/mainPageParser.h"
+#include "../../core/globalParser.h"
+#include "../../core/pages.h"
 
 #include "mainPage.h"
 #include "../fonts/fonts.h"
 #include "../sprites.h"
 #include "../colors.h"
 
+float lastSongPercentage = 0.0f;
+float lastRemainingTimeInSong = 0.0f;
+unsigned long lastUpdateMillis = 0;
+float lastSongDuration = 1.0f; // Pour éviter division par zéro
 
 MainPage mainPage;
 
@@ -142,16 +148,38 @@ void MainPage::showRemainingTimeInSet(bool show) {
         showSpriteColor("", defaultBgColor, defaultBgColor, totalTimeSprite, false);
         return;
     }
-    // if (_main.setlistTotalTime <= 0) {
+    // if (mainParser.setlistTotalTime <= 0) {
     //     Serial.println("Warning: setlistTotalTime is 0 or negative, cannot format time.");
     //     return;
     // }
-    // const char* setlistTotalTime = formatTime(_main.setlistTotalTime);
-    // if (_main.setlistTotalTime != _main.previousSetlistTotalTime) {
+    // const char* setlistTotalTime = formatTime(mainParser.setlistTotalTime);
+    // if (mainParser.setlistTotalTime != mainParser.previousSetlistTotalTime) {
     //     showSpriteColor(setlistTotalTime, defaultTxtColor, _SetlistBlue, totalTimeSprite, true);
-    //     _main.previousSetlistTotalTime = _main.setlistTotalTime;
+    //     mainParser.previousSetlistTotalTime = mainParser.setlistTotalTime;
     // }
   // showSpriteColor(formatTime(setlistTotalTime), defaultTxtColor, _SetlistBlue, totalTimeSprite, true);
+}
+
+
+
+void MainPage::updateProgressBar() {
+    // Calcul de la progression en fonction de la position courante
+    float songStart = mainParser.activeSongStart; // début en ticks ou secondes
+    float songEnd = mainParser.activeSongEnd;     // fin en ticks ou secondes
+    float position = global.beatsPosition;        // position courante (même unité)
+
+    float duration = songEnd - songStart;
+    float progress = position - songStart;
+
+    float percentage = 0.0f;
+    if (duration > 0.0f && progress >= 0.0f) {
+        percentage = progress / duration;
+        if (percentage < 0.0f) percentage = 0.0f;
+        if (percentage > 1.0f) percentage = 1.0f;
+    }
+
+    mainParser.songPercentage = percentage;
+    if(activePage->pageType == SETLIST) updateProgressBarFine(true);
 }
 
 void MainPage::updateProgressBarFine(bool show) {
@@ -159,39 +187,53 @@ void MainPage::updateProgressBarFine(bool show) {
         showSpriteColor("", defaultBgColor, defaultBgColor, progressBarSprite, false);
         return;
     }
-    
-    // Vérification du pointeur sprite
     if (!progressBarSprite) {
         DEBUG_LOGLN("updateProgressBarFine: progressBarSprite is null");
         return;
     }
-    
-    // Protection contre les valeurs invalides
-    if (!(_main.songPercentage >= 0.0f && _main.songPercentage <= 1.0f)) {
-        DEBUG_LOG_VALUE("updateProgressBarFine: invalid songPercentage: ", _main.songPercentage);
-        _main.songPercentage = 0.0f;
+    if (!(mainParser.songPercentage >= 0.0f && mainParser.songPercentage <= 1.0f)) {
+        DEBUG_LOG_VALUE("updateProgressBarFine: invalid songPercentage: ", mainParser.songPercentage);
+        mainParser.songPercentage = 0.0f;
     }
-    
-    // Vérification des dimensions
     if (progressBarSprite->width <= 0 || progressBarSprite->height <= 0) {
         DEBUG_LOGLN("updateProgressBarFine: invalid sprite dimensions");
         return;
     }
-    
+
     progressBarSprite->sprite.createSprite(progressBarSprite->width, progressBarSprite->height);
     const int16_t width = WIDTH * 0.8;
     const int16_t barX = (WIDTH - width) / 2;
-    int bar_width = _main.songPercentage * width;
-    
-    // Protection contre les dimensions négatives
-    if (width <= 0 || bar_width < 0) {
-        DEBUG_LOGLN("updateProgressBarFine: invalid calculated dimensions");
-        progressBarSprite->sprite.deleteSprite();
-        return;
+    int bar_width = mainParser.songPercentage * width;
+
+    // Fond arrondi
+    int arcCenterX = barX + progressBarRadius-2;
+    int arcCenterY = progressBarSprite->height / 2;        
+    int arcRadius = progressBarRadius - 2;
+
+    progressBarSprite->sprite.fillSmoothRoundRect(barX, 0, width, progressBarSprite->height, progressBarRadius, _Gray, defaultBgColor);
+
+    // Barre rectangulaire
+    if (bar_width > 0) {
+        progressBarSprite->sprite.fillRect(barX, 0, bar_width, progressBarSprite->height, mainParser.activeSongColor);
+
+        // Arc gauche (bord arrondi, 180°)
+        progressBarSprite->sprite.drawSmoothArc(
+            arcCenterX, arcCenterY,
+            arcRadius + 8, arcRadius,
+            360, 180, // arc de gauche (bas à haut)
+            defaultBgColor, defaultBgColor
+        );
     }
-    
-    progressBarSprite->sprite.fillSmoothRoundRect(barX, 0, width,  progressBarSprite->height, progressBarRadius, _Gray, TFT_BLACK);
-    progressBarSprite->sprite.fillSmoothRoundRect(barX, 0, bar_width,  progressBarSprite->height, progressBarRadius , _main.activeSongColor, TFT_BLACK);
+
+    // Arc droit (bord arrondi, position fixe à la fin du fond)
+    int arcRightX = barX + width - progressBarRadius;
+    progressBarSprite->sprite.drawSmoothArc(
+        arcRightX, arcCenterY,
+        arcRadius + 8, arcRadius,
+        180, 0, // arc de droite (haut à bas)
+       defaultBgColor, defaultBgColor
+    );
+
     progressBarSprite->sprite.pushSprite(progressBarSprite->positionX, progressBarSprite->positionY);
     progressBarSprite->sprite.deleteSprite();
 }
@@ -203,18 +245,18 @@ void MainPage::showRemainingTimeInSong(bool show) {
   }
   
   // Protection contre les valeurs invalides
-  if (isnan(_main.currentSeconds) || isinf(_main.currentSeconds) || _main.currentSeconds < 0) {
-    DEBUG_LOG_VALUE("showRemainingTimeInSong: invalid currentSeconds: ", _main.currentSeconds);
-    _main.currentSeconds = 0.0f;
+  if (isnan(mainParser.currentSeconds) || isinf(mainParser.currentSeconds) || mainParser.currentSeconds < 0) {
+    DEBUG_LOG_VALUE("showRemainingTimeInSong: invalid currentSeconds: ", mainParser.currentSeconds);
+    mainParser.currentSeconds = 0.0f;
   }
   
-  const char* currentTime = formatTime(_main.currentSeconds);
+  const char* currentTime = formatTime(mainParser.currentSeconds);
   if (!currentTime) {
     DEBUG_LOGLN("showRemainingTimeInSong: formatTime returned null");
     return;
   }
   
-  showSpriteColor(currentTime,  defaultTxtColor, _main.activeSongColor, timeSprite, false);
+  showSpriteColor(currentTime,  defaultTxtColor, mainParser.activeSongColor, timeSprite, false);
 }
 
 void MainPage::showSongsCounter(bool show) {
@@ -224,23 +266,23 @@ void MainPage::showSongsCounter(bool show) {
   }
   
   // Protection contre les valeurs invalides
-//   if (_main.activeSongIndex < 0) || _main.songsListSize <= 0) {
-//     DEBUG_LOG_VALUE("showSongsCounter: invalid activeSongIndex: ", _main.activeSongIndex);
-//     DEBUG_LOG_VALUE("showSongsCounter: invalid songsListSize: ", _main.songsListSize);
+//   if (mainParser.activeSongIndex < 0) || mainParser.songsListSize <= 0) {
+//     DEBUG_LOG_VALUE("showSongsCounter: invalid activeSongIndex: ", mainParser.activeSongIndex);
+//     DEBUG_LOG_VALUE("showSongsCounter: invalid songsListSize: ", mainParser.songsListSize);
 //     showSpriteColor("0/0", defaultTxtColor, _SetlistBlue, songsCountSprite, true);
 //     return;
 //   }
-  if (_main.activeSongIndex < 0) _main.activeSongIndex = 0;
-  if (_main.songsListSize < 0) _main.songsListSize = 0;
+  if (mainParser.activeSongIndex < 0) mainParser.activeSongIndex = 0;
+  if (mainParser.songsListSize < 0) mainParser.songsListSize = 0;
 
   // Protection contre overflow d'index
-//   if (_main.activeSongIndex >= _main.songsListSize) {
+//   if (mainParser.activeSongIndex >= mainParser.songsListSize) {
 //     DEBUG_LOGLN("showSongsCounter: activeSongIndex >= songsListSize, capping");
-//     _main.activeSongIndex = _main.songsListSize - 1;
+//     mainParser.activeSongIndex = mainParser.songsListSize - 1;
 //   }
   
   char buffer[20];
-  int result = snprintf(buffer, sizeof(buffer), "%d/%d", _main.activeSongIndex+1, _main.songsListSize);
+  int result = snprintf(buffer, sizeof(buffer), "%d/%d", mainParser.activeSongIndex+1, mainParser.songsListSize);
   
   // Protection contre overflow du buffer
   if (result < 0 || result >= sizeof(buffer)) {
@@ -254,45 +296,24 @@ void MainPage::showSongsCounter(bool show) {
 
 
 void MainPage::showButtonSprite(bool buttonState, int num, const char* text, uint16_t bgColor, bool luminance) {
-    // Vérifications critiques de sécurité
-    if (!text) {
-        DEBUG_LOGLN("showButtonSprite: null text pointer");
-        return;
-    }
-    
-    if (!userButtonSprite) {
-        DEBUG_LOGLN("showButtonSprite: userButtonSprite is null");
-        return;
-    }
-    
-    // Protection contre les index invalides
-    if (num < 0 || num >= 5) {
-        DEBUG_LOG_VALUE("showButtonSprite: invalid button number: ", num);
-        return;
-    }
-    
-    // Protection contre les dimensions invalides
-    if (WIDTH <= 0 || HEIGHT <= 0) {
-        DEBUG_LOGLN("showButtonSprite: invalid screen dimensions");
-        return;
-    }
-    
+
+    if (!text) return;
+    if (!userButtonSprite) return;
+    if (num < 0 || num >= 5) return;
+    if (WIDTH <= 0 || HEIGHT <= 0) return;
+
     uint16_t txtColor = luminance ? defaultBgColor : defaultTxtColor;
     int width = WIDTH/6 + 10;
-    
-    // Vérification que les dimensions calculées sont valides
-    if (width <= 0 || HEIGHT/5 <= 0) {
-        DEBUG_LOGLN("showButtonSprite: calculated dimensions are invalid");
-        return;
-    }
-    
+    if (width <= 0 || HEIGHT/5 <= 0) return;
+
     userButtonSprite->sprite.createSprite(width, HEIGHT/5);
-    
-    // Protection contre les coordonnées négatives
+    userButtonSprite->sprite.loadFont(FONT10); 
+
     const int rectWidth = width > 4 ? width - 4 : 1;
     const int rectHeight = 56 > 4 ? 56 - 4 : 1;
-    
+
     userButtonSprite->sprite.fillSmoothRoundRect(0, 0, width, 56, RADIUS, bgColor, _Black);
+
     if (buttonState) {
         userButtonSprite->sprite.drawSmoothRoundRect(2, 2, RADIUS, RADIUS-2, rectWidth, rectHeight, txtColor, _Black);
     } else {
@@ -303,54 +324,46 @@ void MainPage::showButtonSprite(bool buttonState, int num, const char* text, uin
     userButtonSprite->sprite.setTextColor(txtColor, defaultBgColor);
     userButtonSprite->sprite.setTextSize(2);
 
-    char line1[20] = {0};  // Initialise à zéro
-    char line2[20] = {0};  // Initialise à zéro
-    
-    // Protection contre les chaînes trop longues et sscanf
+    char line1[20] = {0};
+    char line2[20] = {0};
+
     size_t textLen = strlen(text);
-    if (textLen >= 200) {  // Protection contre les chaînes extrêmement longues
-        DEBUG_LOGLN("showButtonSprite: text too long, truncating");
+
+    if (textLen >= 200) {
         strncpy(line1, text, 19);
         line1[19] = '\0';
     } else {
-        int wordsRead = sscanf(text, "%19s %19s", line1, line2);  // Limite la lecture pour éviter les dépassements
+        int wordsRead = sscanf(text, "%19s %19s", line1, line2);
         if (wordsRead < 1) {
-            strcpy(line1, "?");  // Fallback si sscanf échoue
+            strcpy(line1, "");
         }
     }
 
     int x = width / 2;
     int y1 = (HEIGHT/5) / 3; 
     int y2 = (HEIGHT/5) * 2 / 3;
-
-    // Vérification que les coordonnées sont valides
     if (x < 0 || y1 < 0 || y2 < 0) {
-        DEBUG_LOGLN("showButtonSprite: invalid text coordinates");
         userButtonSprite->sprite.deleteSprite();
         return;
     }
 
     userButtonSprite->sprite.drawString(line1, x, y1, GFXFF);
-    if (strlen(line2) > 0) {  // N'affiche line2 que s'il y a un deuxième mot
+    if (strlen(line2) > 0) {
         userButtonSprite->sprite.drawString(line2, x, y2, GFXFF);
     }
 
     userButtonSprite->sprite.unloadFont();
-    
-    // Protection des coordonnées de push
+
     int pushX = (WIDTH/5 * num) + 5;
     int pushY = HEIGHT - HEIGHT/5;
-    
     if (pushX < 0 || pushY < 0) {
-        DEBUG_LOGLN("showButtonSprite: invalid push coordinates");
         userButtonSprite->sprite.deleteSprite();
         return;
     }
-    
+
     userButtonSprite->sprite.pushSprite(pushX, pushY);
     userButtonSprite->sprite.deleteSprite();
 }
-
 
 void MainPage::showPlaySprite(bool _isPlaying,bool show) {
     if(!show) {
@@ -401,31 +414,27 @@ void MainPage::showLoopSprite(bool _isLooping, bool show) {
     loopSprite->sprite.fillRoundRect(0, 0, loopSprite->width, loopSprite->height, 4, _Black);
 
     int color = _isLooping ? _Yellow : _DarkGray ;
+    int padding = 4;
     int thickness = 4;
     int margin = 8;
     int margin_v = 12;
-    int w = loopSprite->width;
-    int h = loopSprite->height;
+    int w = loopSprite->width - 2*padding;
+    int h = loopSprite->height - 2*padding;
+    //  Grand rectangle arrondi (contour de la boucle)
+    loopSprite->sprite.fillRoundRect(margin, margin + padding, w - margin, h - 2*margin, thickness*2, color);
 
-    // Dessin du rectangle "boucle" (forme carrée)
-    // 1. Trait haut
-    loopSprite->sprite.fillRect(margin, margin_v, w - 2*margin, thickness, color);
-    // 3. Trait bas
-    loopSprite->sprite.fillRect(margin, h - margin_v - thickness, w - 2*margin, thickness, color);
-    // 2. Trait droit
-    loopSprite->sprite.fillRect(w - margin - thickness, margin_v, thickness, h - 2*margin_v, color);
-    // 4. Trait gauche
-    loopSprite->sprite.fillRect(margin, margin_v, thickness, h - 2*margin_v - thickness, color);
-    // 5. Petit "pont" pour la flèche
+    // Petit rectangle arrondi (intérieur, couleur de fond)
+    loopSprite->sprite.fillRoundRect(margin + thickness, margin + padding + thickness, w - 2*(padding + thickness), h - 2*(margin + thickness), thickness*2 - 2, defaultBgColor);
+
     int bridgeW = w/4;
     int bridgeH = thickness;
-    loopSprite->sprite.fillRect(w/2 - bridgeW/2, h - margin_v - thickness, bridgeW, thickness, _Black);
+    loopSprite->sprite.fillRect(w/2 - bridgeW/2, h - margin, bridgeW, thickness, defaultBgColor);
 
     // Triangle (pointe de flèche) en bas au centre
     int triBase = thickness * 2;
     int triHeight = thickness * 2;
     int triX = w/2 + bridgeW/2;
-    int triY = h - margin_v - thickness/2;
+    int triY = h - margin_v - thickness/2 + margin - 1;
     loopSprite->sprite.fillTriangle(triX, triY + 2*thickness, triX , triY - 2*thickness, triX - 2*thickness, triY, color);
 
     if (loopSprite->positionX < 0 || loopSprite->positionY < 0) {

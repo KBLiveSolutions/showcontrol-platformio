@@ -39,7 +39,7 @@ void AnalogPot::check_pot() {
         DEBUG_LOG(number);
         DEBUG_LOG("  ");
         DEBUG_LOGLN(reading);
-        // activePage.expressionPedal(number, int(reading/2) );
+        // activePage->expressionPedal(number, int(reading/2) );
         lastReading = reading;
     }
 }

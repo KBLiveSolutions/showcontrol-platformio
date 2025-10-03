@@ -1,3 +1,17 @@
+#include "pages.h"
+#include "utils.h"
+#include "../config/consts.h"
+#include "../display/pages/mainPage.h"
+// #include "../display/pages/settingsPage.h"
+// #include "../display/pages/menuPage.h"
+// #include "../display/pages/splashPage.h"
+// #include "../display/pages/globalPage.h"
+#include "../display/colors.h"
+#include "../leds/leds.h"
+// #include "../osc/OSCManager.h"
+// #include "../midi/midi_out.h"
+// #include "mainPageParser.h"
+// #include "globalParser.h"
 
 // ====================================
 // LEDS
@@ -10,7 +24,16 @@ void Page::checkLeds(uint8_t channel, uint8_t _control, uint8_t value) {
       if (i + 1 < NUM_LEDS) {
         l[i + 1].setIndexedColor(value, channel);
         l[i + 1].show_color();
-        // if (pageType == USER) mainPage.showButtonSprite(buttonPressed[i], i, getActionName(pageNumber, i), getActionColor(pageNumber, i), getLuminance(i));
+        if (pageType == USER) {
+          uint16_t ledColor = l[i + 1].getColor(); // Méthode à adapter selon ta classe LED
+          mainPage.showButtonSprite(
+              buttonPressed[i],
+              i,
+              getActionName(pageNumber, i),
+              ledColor, // couleur de la LED
+              getLuminance(i)
+          );
+        }
       }
       break;
     }

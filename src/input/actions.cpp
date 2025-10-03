@@ -21,9 +21,11 @@
 
 bool shift = false;
 
-void onLockButtonPress()
+Action::Action() {}
+
+void Action::onLockButtonPress()
 {
-    if (activePage.pageType == MENU || activePage.pageType == SETTINGS) {
+    if (activePage->pageType == MENU || activePage->pageType == SETTINGS) {
         switchActivePage(previousActivePage); // Return to previous page if in MENU or SETTINGS
         DEBUG_LOGLN("Returning to previous page from MENU or SETTINGS");    
         return;
@@ -43,7 +45,7 @@ void onLockButtonPress()
     shift = true;
 };
 
-void onLockButtonRelease()
+void Action::onLockButtonRelease()
 {
     // settings.isLocked = !settings.isLocked;
     // jsonManager.writeOption("settings.isLocked", settings.isLocked);
@@ -55,14 +57,13 @@ void onLockButtonRelease()
     shift = false;
 };
 
-void onEncoderButtonPress(){
+void Action::onEncoderButtonPress(){
     if(settings.isLocked) {
         DEBUG_LOGLN("Encoder button pressed while locked");
         return; // Ignore if settings are locked
     }
-    if(shift) debugOn = !debugOn;
     DEBUG_LOG_VALUE("Encoder button pressed, shift: ", shift);  
-    switch (activePage.pageType){
+    switch (activePage->pageType){
         case SETTINGS:
             settings.validateSettings();
             break;
@@ -79,9 +80,9 @@ void onEncoderButtonPress(){
                     else{ // Main menu item selected
                         DEBUG_LOGLN("Main menu item selected");
                         DEBUG_LOG_VALUE("Selected mode: ", menuPage.activeMenuItem);
-                        _main.selectedMode = menuPage.activeMenuItem;
-                        switchActivePage(pages[_main.selectedMode]);
-                        jsonManager.writeOption("selectedMode", _main.selectedMode);
+                        mainParser.selectedMode = menuPage.activeMenuItem;
+                        switchActivePage(pages[mainParser.selectedMode]);
+                        jsonManager.writeOption("selectedMode", mainParser.selectedMode);
                     }
                 }
                 break;
@@ -107,39 +108,38 @@ void onEncoderButtonPress(){
             DEBUG_LOGLN("Encoder button pressed in SETLIST_PAGE");
             menuPage.activeMenu = SONG_MENU;
             getAblesetValues();
-            menuPage.activeMenuItem = _main.activeSongIndex;
+            menuPage.activeMenuItem = mainParser.activeSongIndex;
             switchActivePage(MENU_PAGE);
         }
         break;
     }
 }
 
-void onEncoderButtonLongPress()
+void Action::onEncoderButtonLongPress()
 {
-    if (activePage == SPLASH_PAGE){
+    if (activePage == &SPLASH_PAGE){
         switchActivePage(SETTINGS_PAGE);
         return;
     }
     menuPage.activeMenu = MAIN_MENU;
-    menuPage.activeMenuItem = _main.selectedMode;
+    menuPage.activeMenuItem = mainParser.selectedMode;
     switchActivePage(MENU_PAGE);
 };
 
-void onButtonShortPress(uint8_t idx)
+void Action::onButtonShortPress(uint8_t idx)
 {
     DEBUG_LOG_VALUE("Button short pressed: ", idx);
-    if (!settings.isLocked) activePage.onButtonShortPress(idx);
+    if (!settings.isLocked) activePage->onButtonShortPress(idx);
 };
 
-void onButtonLongPress(uint8_t idx)
+void Action::onButtonLongPress(uint8_t idx)
 {
-    if (!settings.isLocked) activePage.buttonLongPress(idx);
+    if (!settings.isLocked) activePage->buttonLongPress(idx);
 };
 
-void press_button(uint8_t idx)
+void Action::press_button(uint8_t idx)
 {
-    DEBUG_LOG_VALUE("Button pressed: ", idx);
-    activePage.press_button(idx);
+    activePage->press_button(idx);
     if(idx < NUM_LEDS){
         if (!settings.isLocked) l[idx].show_white();
         else l[idx].show_red();
@@ -147,22 +147,36 @@ void press_button(uint8_t idx)
     if (idx == 0) onLockButtonPress(); // Lock button
 };
 
-void release_button(uint8_t idx)
+void Action::release_button(uint8_t idx)
 {
-    activePage.release_button(idx);
+    activePage->release_button(idx);
     if(idx < NUM_LEDS) l[idx].show_color();
     if (idx == 0) onLockButtonRelease(); // Lock button
 };
 
-void onEncoderTurned(int value)
+void Action::onEncoderTurned(int value)
 {
     DEBUG_LOG_VALUE("Encoder value: ", value);
-    if (activePage.pageType == SETTINGS)
+    if (activePage->pageType == SETTINGS)
     {
         settingsPage.changeSelectedItem(value);
     }
-    else if (activePage.pageType == MENU)
+    else if (activePage->pageType == MENU)
     {
         menuPage.changeSelectedItem(value);
     }
 };
+
+void Action::onPedalPress(uint8_t idx)
+{
+    DEBUG_LOG_VALUE("Pedal short pressed: ", idx);
+    // if (!settings.isLocked) activePage->onPedalPress(idx);
+};  
+
+void Action::onLongPedalPress(uint8_t idx)
+{
+    DEBUG_LOG_VALUE("Pedal long pressed: ", idx);
+    // if (!settings.isLocked) activePage->onLongPedalPress(idx);
+};
+
+Action actions;

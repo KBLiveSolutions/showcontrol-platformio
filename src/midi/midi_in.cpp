@@ -13,7 +13,7 @@ size_t sysExBufferSize = 0;
 uint8_t sysExBuffer[SYSEX_BUFFER_SIZE];
 
 void midi::onControlChange(uint8_t channel, uint8_t control, uint8_t value) {
-  _main.setCCReceived(channel, control, value);
+  mainParser.setCCReceived(channel, control, value);
 }
 
 // Fonction utilitaire pour valider l'en-tête SysEx
@@ -96,26 +96,26 @@ void midi::onSysEx(uint8_t *data, unsigned int _length) {
     case CMD_CONFIGURE_BUTTON: // Configure button
       if (_length >= 13) {
         DEBUG_LOGLN("Configure button received");
-        _main.configureButton(data[6], data[7], data[8], data[9], data[10], data[11], data[12]); 
+        mainParser.configureButton(data[6], data[7], data[8], data[9], data[10], data[11], data[12]); 
       }
       break;
       
     case CMD_IN_CONFIGURE_PEDAL: // Configure pedal (commented out)
       DEBUG_LOGLN("Configure pedal received (not implemented)");
-      // _main.configurePedal(data[6], data[7], data[8], data[9], data[10], data[11], data[12]); 
+      // mainParser.configurePedal(data[6], data[7], data[8], data[9], data[10], data[11], data[12]); 
       break;
       
     case CMD_CONFIGURE_LED: // Configure LED
       if (_length >= 11) {
         DEBUG_LOGLN("Configure LED received");
-        _main.configureLed(data[6], data[7], data[8], data[9], data[10]); 
+        mainParser.configureLed(data[6], data[7], data[8], data[9], data[10]); 
       }
       break;
       
     case CMD_CONFIGURE_DISPLAY: // Configure display
       if (_length >= 9) {
         DEBUG_LOGLN("Configure display received");
-        _main.configureDisplay(data[6], data[7], data[8]); 
+        mainParser.configureDisplay(data[6], data[7], data[8]); 
       }
       break;
       
@@ -149,7 +149,7 @@ void midi::onSysEx(uint8_t *data, unsigned int _length) {
       if (command == CMD_IN_DISPLAY_ITEM) {
         parseDisplayItem(data[6], strBuf, data[_length - 2]);
       } else {
-        _main.parseArrayItem(data[6], strBuf, data[_length - 3], data[_length - 2]);
+        mainParser.parseArrayItem(data[6], strBuf, data[_length - 3], data[_length - 2]);
       }
       break;
     }
@@ -286,7 +286,6 @@ void midi::clearSysExBuffer() {
   memset(sysExBuffer, 0, SYSEX_BUFFER_SIZE);
   sysExBufferSize = 0;
   isSysExContinued = false;
-  DEBUG_LOGLN("SysEx buffer cleared");
 }
 
 void midi::handleSysExMessage(uint8_t *packet) {
@@ -396,7 +395,7 @@ void midi::parseDisplayItem(uint8_t itemType, char* strBuf, int arg2){
     return;
   }
   
-  if (itemType >= sizeof(displayedItemsArray) / sizeof(displayedItemsArray[0])) {
+  if (itemType >= sizeof(displayedItemsArray)) {
     DEBUG_LOG_VALUE("Invalid itemType: ", itemType);
     return;
   }
@@ -414,47 +413,70 @@ void midi::parseDisplayItem(uint8_t itemType, char* strBuf, int arg2){
   
   // Switch principal pour les autres types d'éléments
   switch(displayedItem) {
+
+    case SceneName:
+      DEBUG_LOGLN("Setting scene name");
+      mainParser.setSceneName(strBuf);
+      break;
+
+    case TrackName:
+      DEBUG_LOGLN("Setting track name");
+      mainParser.setTrackName(strBuf);
+      break;
+
+    case LooperName:
+      DEBUG_LOGLN("Setting looper name (not implemented)");
+      // showSprite(strBuf, _LightGray, titleSprite);
+      break;
+
+    case Tempo: {
+      const float tempoValue = atof(strBuf);
+      DEBUG_LOG_VALUE("Setting tempo to: ", tempoValue);
+      global.setTempo(tempoValue);
+    }
+     break;
+
     case ActiveSong:
       DEBUG_LOGLN("Setting active song name");
-      _main.setActiveSongName(strBuf);
+      mainParser.setActiveSongName(strBuf);
       break;
       
     case ActiveSection:
       DEBUG_LOGLN("Setting active section name");
-      _main.setActiveSectionName(strBuf);
+      mainParser.setActiveSectionName(strBuf);
       break;
       
     case NextSong:
       DEBUG_LOGLN("Setting next song name");
-      _main.setNextSongName(strBuf);
+      mainParser.setNextSongName(strBuf);
       break;
       
     case ActiveSongIndex:
       DEBUG_LOG_VALUE("Setting active song index: ", arg2);
-      _main.setActiveSongIndex(arg2);
+      mainParser.setActiveSongIndex(arg2);
       break;
       
     case ActiveSongPosition:
       DEBUG_LOGLN("Active song position (not implemented)");
-      // _main.songPercentage = atof(strBuf) / 200;
+      // mainParser.songPercentage = atof(strBuf) / 200;
       break;
       
     case BeatsPosition:
-      DEBUG_LOGLN("Beats position (not implemented)");
+      // DEBUG_LOGLN("Beats position (not implemented)");
       // global.current_beat = atof(strBuf);
       // globalPage.showCounter();
       break;
       
     case Active_Song_Seconds:
       DEBUG_LOGLN("Active song seconds (not implemented)");
-      // _main.currentSeconds = atof(strBuf);
+      // mainParser.currentSeconds = atof(strBuf);
       // mainPage.showRemainingTimeInSong();
       break;
       
     case ActiveSetlist:
       DEBUG_LOGLN("Active setlist (not implemented)");
       // showSprite(strBuf, _LightGray, titleSprite);
-      // _main.setlistTotalTime = arg2;
+      // mainParser.setlistTotalTime = arg2;
       // mainPage.showRemainingTimeInSet(true);
       break;
       
@@ -464,5 +486,5 @@ void midi::parseDisplayItem(uint8_t itemType, char* strBuf, int arg2){
   }
   
   // TODO: Uncomment when menu functionality is implemented
-  // if (menuPage.activeMenu == MENU_OFF) activePage.showItem(itemType);
+  // if (menuPage.activeMenu == MENU_OFF) activePage->showItem(itemType);
 }

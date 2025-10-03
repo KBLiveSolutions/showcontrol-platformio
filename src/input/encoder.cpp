@@ -20,7 +20,7 @@ void Rotary::update_rotary() {
         enc_state = HIGH;
         int value = (pos < newPos) ? -1 : 1;
         pos = newPos;
-        onEncoderTurned(value);
+        actions.onEncoderTurned(value);
     }
 }
 
