@@ -28,6 +28,7 @@ class SettingsPage {
     {INT_TYPE, .intValue = manualIP[2]},
     {INT_TYPE, .intValue = manualIP[3]},
     {INT_TYPE, .intValue = showcontrolLocalPort},
+    {INT_TYPE, .intValue = settings.idNumber},
     {CHAR_PTR_TYPE, .charPtrValue = "Save & Exit"},
     // {INT_TYPE, .intValue = subnet[1]},
     // {INT_TYPE, .intValue = subnet[2]},

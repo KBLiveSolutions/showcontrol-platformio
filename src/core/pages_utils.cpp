@@ -19,13 +19,7 @@ Page& Page::operator=(const Page& other) {
         // Utilisation de memcpy pour les copies de tableaux (plus efficace)
         memcpy(buttonPressed, other.buttonPressed, sizeof(buttonPressed));
         memcpy(buttonState, other.buttonState, sizeof(buttonState));
-        memcpy(control_custom, other.control_custom, sizeof(control_custom));
-        memcpy(control_type, other.control_type, sizeof(control_type));
-        memcpy(control_led_cc, other.control_led_cc, sizeof(control_led_cc));
-        memcpy(control_led_ch, other.control_led_ch, sizeof(control_led_ch));
-        memcpy(control_cc, other.control_cc, sizeof(control_cc));
-        memcpy(control_ch, other.control_ch, sizeof(control_ch));
-        memcpy(control_toggle, other.control_toggle, sizeof(control_toggle));
+        memcpy(controls, other.controls, sizeof(controls));
         memcpy(pedalState, other.pedalState, sizeof(pedalState));
         memcpy(pedal_cc, other.pedal_cc, sizeof(pedal_cc));
         memcpy(pedal_ch, other.pedal_ch, sizeof(pedal_ch));

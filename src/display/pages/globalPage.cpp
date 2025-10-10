@@ -118,16 +118,6 @@ void GlobalPage::showEthSprite(bool midiConnected, int num) {
   ETHSprite->sprite.deleteSprite();
 }
 
-void GlobalPage::updateEthSprite(int amount){
-  // Protection contre les valeurs extremes
-  if (amount < -999 || amount > 999) {
-    DEBUG_LOG_VALUE("updateEthSprite: invalid amount value: ", amount);
-    amount = (amount < 0) ? -1 : 999;
-  }
-  
-  showEthSprite(settings.MIDIConnected, amount);
-}
-
 // void GlobalPage::showPageIcon(){
 //   // Vérification critique du pointeur sprite
 //   if (!modeSprite) {

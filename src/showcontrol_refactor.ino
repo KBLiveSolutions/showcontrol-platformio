@@ -49,6 +49,13 @@ void setup() {
   midi::setup();
   delay(100);
 
+  pinMode(TFT_LED, OUTPUT);
+  digitalWrite(TFT_LED, LOW);
+  displayManager::setup();
+  delay(200);  // Délai après display setup
+  
+  DEBUG_LOGLN("Display setup done");
+
 
 
   Serial.begin(115200);
@@ -63,11 +70,12 @@ void setup() {
   
   DEBUG_LOGLN("ShowControl setup started...");
   
-  // Ordre d'initialisation critique - les dépendances doivent être respectées
-  DEBUG_LOGLN("Initializing JSON manager...");
+    DEBUG_LOGLN("Initializing JSON manager...");
   jsonManager.setup();
   delay(100);  // Stabilisation après init JSON
   
+  // Ordre d'initialisation critique - les dépendances doivent être respectées
+
   DEBUG_LOGLN("Initializing settings...");
   settings.setup();
   delay(100);  // Stabilisation après init settings
@@ -77,11 +85,6 @@ void setup() {
   
   // Délai important avant display pour éviter les conflits USB/SPI
   delay(500);  // Délai plus long pour stabiliser
-  
-  displayManager::setup();
-  delay(200);  // Délai après display setup
-  
-  DEBUG_LOGLN("Display setup done");
   
   DEBUG_LOGLN("Initializing LEDs...");
   leds::setup();

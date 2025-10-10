@@ -265,22 +265,9 @@ void MainPage::showSongsCounter(bool show) {
     return;
   }
   
-  // Protection contre les valeurs invalides
-//   if (mainParser.activeSongIndex < 0) || mainParser.songsListSize <= 0) {
-//     DEBUG_LOG_VALUE("showSongsCounter: invalid activeSongIndex: ", mainParser.activeSongIndex);
-//     DEBUG_LOG_VALUE("showSongsCounter: invalid songsListSize: ", mainParser.songsListSize);
-//     showSpriteColor("0/0", defaultTxtColor, _SetlistBlue, songsCountSprite, true);
-//     return;
-//   }
   if (mainParser.activeSongIndex < 0) mainParser.activeSongIndex = 0;
   if (mainParser.songsListSize < 0) mainParser.songsListSize = 0;
 
-  // Protection contre overflow d'index
-//   if (mainParser.activeSongIndex >= mainParser.songsListSize) {
-//     DEBUG_LOGLN("showSongsCounter: activeSongIndex >= songsListSize, capping");
-//     mainParser.activeSongIndex = mainParser.songsListSize - 1;
-//   }
-  
   char buffer[20];
   int result = snprintf(buffer, sizeof(buffer), "%d/%d", mainParser.activeSongIndex+1, mainParser.songsListSize);
   
@@ -289,9 +276,13 @@ void MainPage::showSongsCounter(bool show) {
     DEBUG_LOGLN("showSongsCounter: buffer overflow");
     strcpy(buffer, "?/?");
   }
+  if (mainParser.songsListSize == 0) {
+    strcpy(buffer, "- / -");
+  }
   
   DEBUG_LOG_VALUE("mainPage.showSongsCounter ", buffer);
-  showSpriteColor(buffer,  defaultTxtColor, _SetlistBlue, songsCountSprite, true);
+  uint16_t color = (mainParser.songsListSize == 0) ? defaultBgColor : _SetlistBlue;
+  showSpriteColor(buffer,  defaultTxtColor, color, songsCountSprite, true);
 }
 
 
@@ -414,6 +405,7 @@ void MainPage::showLoopSprite(bool _isLooping, bool show) {
     loopSprite->sprite.fillRoundRect(0, 0, loopSprite->width, loopSprite->height, 4, _Black);
 
     int color = _isLooping ? _Yellow : _DarkGray ;
+    int radius = 3;
     int padding = 4;
     int thickness = 4;
     int margin = 8;
@@ -421,10 +413,10 @@ void MainPage::showLoopSprite(bool _isLooping, bool show) {
     int w = loopSprite->width - 2*padding;
     int h = loopSprite->height - 2*padding;
     //  Grand rectangle arrondi (contour de la boucle)
-    loopSprite->sprite.fillRoundRect(margin, margin + padding, w - margin, h - 2*margin, thickness*2, color);
+    loopSprite->sprite.fillRoundRect(margin, margin + padding, w - margin, h - 2*margin, radius, color);
 
     // Petit rectangle arrondi (intérieur, couleur de fond)
-    loopSprite->sprite.fillRoundRect(margin + thickness, margin + padding + thickness, w - 2*(padding + thickness), h - 2*(margin + thickness), thickness*2 - 2, defaultBgColor);
+    loopSprite->sprite.fillRoundRect(margin + thickness, margin + padding + thickness, w - 2*(padding + thickness), h - 2*(margin + thickness), radius, defaultBgColor);
 
     int bridgeW = w/4;
     int bridgeH = thickness;

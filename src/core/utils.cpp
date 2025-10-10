@@ -14,7 +14,7 @@ displayed_item_t displayedItemsArray[] = {
     TrackName, //2
     LooperName, //3
     VariationName, //4
-    MarkerName, //5
+    LeftMarkerName, //5
     ActiveSong, //6
     ActiveSection, //7
     NextSong, //8
@@ -27,16 +27,14 @@ displayed_item_t displayedItemsArray[] = {
     Song_Array_Item, //15
     Next_Scene_Name, //16
     BeatsPosition, //17
-    Active_Song_Seconds //18
+    Active_Song_Seconds, //18
+    RightMarkerName, //19
 };
 
 
-// Nombre réel d'entrées dans nos dictionnaires
-#define ACTUAL_ENTRIES 74
-
 // Dictionnaire des valeurs d'actions (optimisé avec const)
 const int button_actions_values[ACTUAL_ENTRIES] = {
-    0, 1, 100, 2, 4, 40, 5, 28, 29, 104, 41, 42, 75, 76, 0, 74, 103, 6, 7, 9, 8, 10, 102, 38, 39, 0, 11, 13, 14, 15, 105, 106, 107, 108, 109, 110, 16, 17, 43, 3, 0, 33, 34, 111, 112, 44, 45, 0, 18, 19, 22, 23, 24, 25, 26, 27, 55, 20, 21, 53, 48, 49, 128, 129, 130, 131, 132, 133, 30, 31, 32, 47, 36, 122
+    0, 1, 100, 2, 4, 40, 5, 28, 29, 114, 115, 104, 41, 42, 75, 76, 0, 74, 103, 6, 7, 9, 8, 10, 102, 38, 39, 0, 11, 13, 14, 15, 105, 106, 107, 108, 109, 110, 16, 17, 43, 3, 0, 33, 34, 111, 112, 44, 45, 0, 18, 19, 22, 23, 24, 25, 26, 27, 55, 20, 21, 53, 48, 49, 128, 129, 130, 131, 132, 133, 30, 31, 32, 47, 36, 122
 };
 
 // Dictionnaire des clés d'actions (stocké en mémoire flash)
@@ -50,6 +48,8 @@ const char* const button_actions_keys[ACTUAL_ENTRIES] = {
     "Capture",
     "BPM +1",
     "BPM -1",
+    "Rewind",
+    "Fast Forward",
     "MIDI Recording Quantization",
     "Re-enable Automation",
     "Back To Arrangement",
@@ -142,7 +142,7 @@ const char* getActionName(uint8_t pageNumber, uint8_t buttonNum) {
     return "ERR_PAGE";
   }
   
-  if (buttonNum >= 5) {
+  if (buttonNum >= 10) {
     DEBUG_LOG_VALUE("getActionName: invalid buttonNum: ", buttonNum);
     return "ERR_BTN";
   }
@@ -164,11 +164,11 @@ const char* getActionName(uint8_t pageNumber, uint8_t buttonNum) {
   uint8_t channel = 0;
   
   // Accès sécurisé aux tableaux de contrôle
-  if (buttonNum < sizeof(page.control_cc)/sizeof(page.control_cc[0])) {
-    controlNum = page.control_cc[buttonNum];
-    custom = page.control_custom[buttonNum];
-    controlType = page.control_type[buttonNum];
-    channel = page.control_ch[buttonNum];
+  if (buttonNum < sizeof(page.controls)/sizeof(page.controls[0].cc)) {
+    controlNum = page.controls[buttonNum].cc;
+    custom = page.controls[buttonNum].custom;
+    controlType = page.controls[buttonNum].type;
+    channel = page.controls[buttonNum].ch;
   } else {
     DEBUG_LOG_VALUE("getActionName: buttonNum out of control array bounds: ", buttonNum);
     return "OOB";

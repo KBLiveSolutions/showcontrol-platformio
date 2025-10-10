@@ -19,30 +19,32 @@
 #include "../midi/midi_out.h"
 #include "../leds/leds.h"
 
-bool shift = false;
-
 Action::Action() {}
 
 void Action::onLockButtonPress()
 {
+    settings.shiftPressed = false;
+    DEBUG_LOG_VALUE("Lock button pressed, shift: ", settings.shiftPressed);
     if (activePage->pageType == MENU || activePage->pageType == SETTINGS) {
         switchActivePage(previousActivePage); // Return to previous page if in MENU or SETTINGS
         DEBUG_LOGLN("Returning to previous page from MENU or SETTINGS");    
         return;
     }
-    settings.isLocked = !settings.isLocked;
-    // jsonManager.writeOption("settings.isLocked", settings.isLocked);
-    // globalPage.showLock(settings.isLocked);
-    if (settings.isLocked){
-        l[0].setRGBColor(255, 0, 0); // Show red color for locked state
-        l[0].show_color();
-        mainPage.showLockSprite(true);
+    // settings.isLocked = !settings.isLocked;
+    // // jsonManager.writeOption("settings.isLocked", settings.isLocked);
+    // // globalPage.showLock(settings.isLocked);
+    // if (settings.isLocked){
+    //     l[0].setRGBColor(255, 0, 0); // Show red color for locked state
+    //     l[0].show_color();
+    //     mainPage.showLockSprite(true);
+    // }
+    // else {
+    //     l[0].led_off();
+    //     mainPage.showLockSprite(false);
+    // }
+    else if(activePage->pageType == USER) {
+        activePage->showButtons(true);
     }
-    else {
-        l[0].led_off();
-        mainPage.showLockSprite(false);
-    }
-    shift = true;
 };
 
 void Action::onLockButtonRelease()
@@ -54,7 +56,9 @@ void Action::onLockButtonRelease()
     //     l[0].show_red();
     // else
     //     l[0].led_off();
-    shift = false;
+    settings.shiftPressed = true;
+    DEBUG_LOG_VALUE("Lock button pressed, shift: ", settings.shiftPressed);    
+    if(activePage->pageType == USER) activePage->showButtons(true);
 };
 
 void Action::onEncoderButtonPress(){
@@ -62,7 +66,7 @@ void Action::onEncoderButtonPress(){
         DEBUG_LOGLN("Encoder button pressed while locked");
         return; // Ignore if settings are locked
     }
-    DEBUG_LOG_VALUE("Encoder button pressed, shift: ", shift);  
+    DEBUG_LOG_VALUE("Encoder button pressed, shift: ", settings.shiftPressed);  
     switch (activePage->pageType){
         case SETTINGS:
             settings.validateSettings();
@@ -91,7 +95,7 @@ void Action::onEncoderButtonPress(){
                     DEBUG_LOG_VALUE("Selected song: ", menuPage.activeMenuItem);
                     switchActivePage(pages[0]);
                     delay(20);
-                    sendOSCAbleset("/setlist/jumpToSong", menuPage.activeMenuItem + 1);
+                    osc.sendOSC("/setlist/jumpToSong", menuPage.activeMenuItem + 1);
                 }
                 break;
                 // case SETLIST_MENU:
@@ -107,7 +111,7 @@ void Action::onEncoderButtonPress(){
         case SETLIST:{
             DEBUG_LOGLN("Encoder button pressed in SETLIST_PAGE");
             menuPage.activeMenu = SONG_MENU;
-            getAblesetValues();
+            osc.getValues();
             menuPage.activeMenuItem = mainParser.activeSongIndex;
             switchActivePage(MENU_PAGE);
         }
@@ -129,17 +133,18 @@ void Action::onEncoderButtonLongPress()
 void Action::onButtonShortPress(uint8_t idx)
 {
     DEBUG_LOG_VALUE("Button short pressed: ", idx);
-    if (!settings.isLocked) activePage->onButtonShortPress(idx);
+    // if (!settings.isLocked) activePage->onButtonShortPress(idx);
 };
 
 void Action::onButtonLongPress(uint8_t idx)
 {
-    if (!settings.isLocked) activePage->buttonLongPress(idx);
+    // if (!settings.isLocked) activePage->buttonLongPress(idx);
 };
 
 void Action::press_button(uint8_t idx)
 {
-    activePage->press_button(idx);
+    // if (!settings.isLocked) activePage->onButtonShortPress(idx-1);
+    activePage->press_button(idx-1);
     if(idx < NUM_LEDS){
         if (!settings.isLocked) l[idx].show_white();
         else l[idx].show_red();
@@ -149,7 +154,7 @@ void Action::press_button(uint8_t idx)
 
 void Action::release_button(uint8_t idx)
 {
-    activePage->release_button(idx);
+    activePage->release_button(idx-1);
     if(idx < NUM_LEDS) l[idx].show_color();
     if (idx == 0) onLockButtonRelease(); // Lock button
 };

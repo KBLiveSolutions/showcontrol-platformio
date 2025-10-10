@@ -7,7 +7,7 @@ JSONManager jsonManager("/data.json");
 
 JSONManager::JSONManager(const char* fname) : filename(fname) {
     options = doc["options"];
-    userPagesArray = doc["userPages"];
+    pagesArray = doc["pages"];
 }
 
 bool JSONManager::begin() {
@@ -57,12 +57,12 @@ bool JSONManager::loadFile() {
     DEBUG_LOGLN(doc.size());
     
     options = doc["options"];
-    userPagesArray = doc["userPages"];
+    pagesArray = doc["pages"];
     
     DEBUG_LOG("[JSONManager] Options found: ");
     DEBUG_LOGLN(options.size());
     DEBUG_LOG("[JSONManager] User pages found: ");
-    DEBUG_LOGLN(userPagesArray.size());
+    DEBUG_LOGLN(pagesArray.size());
     
     return true;
 }
@@ -91,24 +91,14 @@ bool JSONManager::saveFile() {
     return true;
 }
 
-bool JSONManager::writeJSONControl(int user_mode, int controlNum, int control_type, int control_cc, int control_ch, int isCustom, int toggled) {
-    DEBUG_LOG("[JSONManager] Writing control - Mode:");
-    DEBUG_LOG(user_mode);
-    DEBUG_LOG(", Ctrl:");
-    DEBUG_LOG(controlNum);
-    DEBUG_LOG(", Type:");
-    DEBUG_LOG(control_type);
-    DEBUG_LOG(", CC:");
-    DEBUG_LOG(control_cc);
-    DEBUG_LOG(", Ch:");
-    DEBUG_LOGLN(control_ch);
+bool JSONManager::writeJSONControl(int user_mode, int controlNum, int type, int cc, int ch, int isCustom, int toggled, const char* actionName, int color, int luminance) {
     
     if (!loadFile()) {
         DEBUG_LOGLN("[JSONManager] ERROR: Failed to load file before writing control");
         return false;
     }
     
-    JsonObject userPage = userPagesArray[user_mode];
+    JsonObject userPage = pagesArray[user_mode];
     if (userPage.isNull()) {
         DEBUG_LOG("[JSONManager] ERROR: User page ");
         DEBUG_LOG(user_mode);
@@ -116,13 +106,16 @@ bool JSONManager::writeJSONControl(int user_mode, int controlNum, int control_ty
         return false;
     }
     
-    userPage["control_custom"][controlNum] = isCustom;
-    userPage["control_type"][controlNum] = control_type;
-    userPage["control_cc"][controlNum] = control_cc;
-    userPage["control_ch"][controlNum] = control_ch;
-    userPage["control_toggle"][controlNum] = toggled;
-    userPage["led_cc"][controlNum] = control_cc;
-    userPage["led_ch"][controlNum] = control_ch;
+    userPage["custom"][controlNum] = isCustom;
+    userPage["type"][controlNum] = type;
+    userPage["cc"][controlNum] = cc;
+    userPage["ch"][controlNum] = ch;
+    userPage["toggle"][controlNum] = toggled;
+    userPage["led_cc"][controlNum] = cc;
+    userPage["led_ch"][controlNum] = ch;
+    userPage["actionNames"][controlNum] = String(actionName ? actionName : "");
+    userPage["led_color"][controlNum] = color;
+    userPage["luminance"][controlNum] = luminance;
     
     bool result = saveFile();
     if (result) {
@@ -133,20 +126,20 @@ bool JSONManager::writeJSONControl(int user_mode, int controlNum, int control_ty
     return result;
 }
 
-// bool JSONManager::writeJSONPedal(int user_mode, int controlNum, int control_type, int control_cc, int control_ch, int isCustom, int toggled) {
+// bool JSONManager::writeJSONPedal(int user_mode, int controlNum, int type, int cc, int ch, int isCustom, int toggled) {
 //     if (!loadFile()) return false;
-//     JsonObject userPage = userPagesArray[user_mode];
+//     JsonObject userPage = pagesArray[user_mode];
 //     userPage["pedal_custom"][controlNum] = isCustom;
-//     userPage["pedal_type"][controlNum] = control_type;
-//     userPage["pedal_cc"][controlNum] = control_cc;
-//     userPage["pedal_ch"][controlNum] = control_ch;
+//     userPage["pedal_type"][controlNum] = type;
+//     userPage["pedal_cc"][controlNum] = cc;
+//     userPage["pedal_ch"][controlNum] = ch;
 //     userPage["pedal_toggle"][controlNum] = toggled;
 //     return saveFile();
 // }
 
 bool JSONManager::writeJSONDisplay(int user_mode, int display_num, int display_type) {
     if (!loadFile()) return false;
-    JsonObject userPage = userPagesArray[user_mode];
+    JsonObject userPage = pagesArray[user_mode];
     userPage["display"][display_num] = display_type;
     return saveFile();
 }
@@ -201,55 +194,100 @@ int JSONManager::getPort() const { return options["port"].as<int>(); }
 //     String key = "pedal" + String(index);
 //     return options[key].as<pedal_type>();
 // }
-
-bool JSONManager::getPages() {
-    DEBUG_LOGLN("[JSONManager] Loading pages from JSON...");
-    
-    for (size_t i = 1; i <= MAX_NUM_USERS; ++i) {
-        JsonObject controlJson = userPagesArray[i];
-        if (controlJson.isNull()) {
-            DEBUG_LOG("[JSONManager] WARNING: Page ");
-            DEBUG_LOG(i);
-            DEBUG_LOGLN(" not found, skipping");
-            continue;
-        }
-        
-        DEBUG_LOG("[JSONManager] Processing page ");
-        DEBUG_LOGLN(i);
-        
-        for (size_t j = 0; j < NUM_CONTROLS; ++j) {
-            control_type_t type = controlJson["control_type"][j].as<control_type_t>();
-            int custom = controlJson["control_custom"][j].as<int>();
-            int cc = controlJson["control_cc"][j].as<int>();
-            int channel = controlJson["control_ch"][j].as<int>();
-            int toggled = controlJson["control_toggle"][j].as<int>();
-            
-            pages[i].setButtonControl(j, type, cc, channel, custom, toggled);
-            
-            cc = controlJson["led_cc"][j].as<int>();
-            channel = controlJson["led_ch"][j].as<int>();
-            pages[i].setLedControl(j, type, cc, channel);
-        }
-        
-        JsonArray displayArray = controlJson["display"];
-        DEBUG_LOG("[JSONManager] Page ");
-        DEBUG_LOG(i);
-        DEBUG_LOG(" loaded with ");
-        DEBUG_LOG(displayArray.size());
-        DEBUG_LOGLN(" display elements");
-        for (size_t j = 0; j < displayArray.size() && j < 3; ++j) {
-            int dispType = displayArray[j].as<int>();
-            pages[i].setDisplay(j, dispType);
-            DEBUG_LOG("[JSONManager] Display ");
-            DEBUG_LOG(j);
-            DEBUG_LOG(" set to type ");
-            DEBUG_LOGLN(dispType);
-        }
-    }
-    
-    DEBUG_LOGLN("[JSONManager] All pages loaded successfully");
-    return true;
+control_type_t JSONManager::getControlType(int page, int control) const {
+    return pagesArray[page]["type"][control].as<control_type_t>();
 }
+int JSONManager::getControlCC(int page, int control) const {
+    return pagesArray[page]["cc"][control].as<int>();
+}
+int JSONManager::getControlChannel(int page, int control) const {
+    return pagesArray[page]["ch"][control].as<int>();
+}
+int JSONManager::getControlToggle(int page, int control) const {
+    return pagesArray[page]["toggle"][control].as<int>();
+}
+int JSONManager::getControlLedCC(int page, int control) const {
+    return pagesArray[page]["led_cc"][control].as<int>();
+}
+int JSONManager::getControlLedChannel(int page, int control) const {
+    return pagesArray[page]["led_ch"][control].as<int>();
+}
+int JSONManager::getControlCustom(int page, int control) const {
+    return pagesArray[page]["custom"][control].as<int>();
+}   
+const char* JSONManager::getActionName(int page, int control, char* buffer, size_t bufferSize) const {
+    const char* name = pagesArray[page]["actionNames"][control].as<const char*>();
+    if (name) {
+        strncpy(buffer, name, bufferSize - 1);
+        buffer[bufferSize - 1] = '\0';
+    } else {
+        buffer[0] = '\0';
+    }
+    return buffer;
+}
+int JSONManager::getLedColorIndex(int page, int control) const {
+    return pagesArray[page]["led_color"][control].as<int>();
+}
+bool JSONManager::getLuminance(int page, int control) const {
+    return pagesArray[page]["luminance"][control].as<bool>();
+}
+displayed_item_t JSONManager::getDisplayType(int page, int displayNum) const {
+    return pagesArray[page]["display"][displayNum].as<displayed_item_t>();
+}
+
+// bool JSONManager::getPages() {
+//     DEBUG_LOGLN("[JSONManager] Loading pages from JSON...");
+    
+//     for (size_t i = 0; i <= MAX_NUM_USERS; ++i) {
+//         JsonObject controlJson = pagesArray[i];
+//         if (controlJson.isNull()) {
+//             DEBUG_LOG("[JSONManager] WARNING: Page ");
+//             DEBUG_LOG(i);
+//             DEBUG_LOGLN(" not found, skipping");
+//             continue;
+//         }
+        
+//         DEBUG_LOG("[JSONManager] Processing page ");
+//         DEBUG_LOGLN(i);
+        
+//         for (size_t j = 0; j < NUM_CONTROLS; ++j) {
+//             control_type_t type = controlJson["type"][j].as<control_type_t>();
+//             int custom = controlJson["custom"][j].as<int>();
+//             int cc = controlJson["cc"][j].as<int>();
+//             int channel = controlJson["ch"][j].as<int>();
+//             int toggled = controlJson["toggle"][j].as<int>();
+//             DEBUG_LOG("[JSONManager] Control ");
+//             DEBUG_LOG_CONT(j);   
+//             DEBUG_LOG_CONT(" - channel: ");
+//             DEBUG_LOG_CONT(channel);
+//             DEBUG_LOG_CONT(", cc: ");
+//             DEBUG_LOG_CONT_LN(cc); 
+//             // pages[i+1].setButtonControl(j, type, cc, channel, custom, toggled);
+            
+//             cc = controlJson["led_cc"][j].as<int>();
+//             channel = controlJson["led_ch"][j].as<int>();
+//             pages[i].setLedControl(j, type, cc, channel);
+//         }
+        
+//         JsonArray displayArray = controlJson["display"];
+//         DEBUG_LOG("[JSONManager] Page ");
+//         DEBUG_LOG(i);
+//         DEBUG_LOG(" loaded with ");
+//         DEBUG_LOG(displayArray.size());
+//         DEBUG_LOGLN(" display elements");
+//         for (size_t j = 0; j < displayArray.size() && j < 3; ++j) {
+//             int dispType = displayArray[j].as<int>();
+//             pages[i].setDisplay(j, dispType);
+//             DEBUG_LOG("[JSONManager] Display ");
+//             DEBUG_LOG(j);
+//             DEBUG_LOG(" set to type ");
+//             DEBUG_LOGLN(dispType);
+//         }
+//     }
+    
+//     DEBUG_LOGLN("[JSONManager] All pages loaded successfully");
+//     return true;
+// }
 
 void JSONManager::sendJSONConfig() {
     if (!doc["options"].is<JsonObject>()) {
@@ -271,11 +309,11 @@ void JSONManager::sendJSONConfigOSC() {
     optionsDoc["options"] = options;
     char jsonBuffer[248];
     serializeJson(optionsDoc, jsonBuffer);
-    sendOSCShowControl("/showcontrol/serialMessage", jsonBuffer);
+    osc.sendOSC("/showcontrol/serialMessage", jsonBuffer);
 }
 
 void JSONManager::sendJSONPage(int pageNum) {
-    JsonObject page = userPagesArray[pageNum];
+    JsonObject page = pagesArray[pageNum];
     JsonDocument controlsDoc;
     controlsDoc["userPage"] = page;
     serializeJson(controlsDoc, Serial);
@@ -283,13 +321,13 @@ void JSONManager::sendJSONPage(int pageNum) {
 }
 
 void JSONManager::sendJSONPageOSC(int pageNum) {
-    JsonObject page = userPagesArray[pageNum];
+    JsonObject page = pagesArray[pageNum];
     JsonDocument controlsDoc;
     controlsDoc["userPage"] = page;
-    sendOSCShowControl("/showcontrol/serialMessage", "page", pageNum);
+    osc.sendOSC("/showcontrol/serialMessage", "page", pageNum);
     char jsonBuffer[512];
     serializeJson(controlsDoc, jsonBuffer);
-    sendOSCShowControl("/showcontrol/serialMessage", jsonBuffer);
+    osc.sendOSC("/showcontrol/serialMessage", jsonBuffer);
 }
 
 void JSONManager::setup() {
@@ -363,7 +401,7 @@ void JSONManager::setup() {
     DEBUG_LOGLN(manualIP[3]);
     
     DEBUG_LOGLN("[JSONManager] Loading user pages...");
-    jsonManager.getPages();
+    // jsonManager.getPages();
     
     DEBUG_LOGLN("[JSONManager] === JSONManager Setup Complete ===");
 }

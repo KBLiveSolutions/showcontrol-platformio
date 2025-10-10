@@ -21,7 +21,7 @@ uint16_t hexStringtoRGB565Shade(char* hex);
 #define _Red RRRGB888toRGB565(180, 0, 0)
 #define _Orange RRRGB888toRGB565(210, 120, 0)
 #define _Amber RRRGB888toRGB565(200, 140, 0)
-#define _Yellow RRRGB888toRGB565(255, 255, 0)
+#define _Yellow RRRGB888toRGB565(200, 200, 0)
 #define _Lime RRRGB888toRGB565(160, 200, 50)
 #define _Green RRRGB888toRGB565(0, 180, 0)
 #define _Emerald RRRGB888toRGB565(0, 200, 180)

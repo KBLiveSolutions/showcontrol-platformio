@@ -9,13 +9,11 @@ void displayManager::setup() {
 
   DEBUG_LOGLN("Initialisation de l'écran TFT...");
   
-  pinMode(TFT_LED, OUTPUT);
-  analogWrite(TFT_LED, 0);
   display.init();
-  delay(50);
   display.setRotation(3);
   display.fillScreen(defaultBgColor);
   delay(100);
-  analogWrite(TFT_LED, 255);
+  // analogWrite(TFT_LED, 255);
+  digitalWrite(TFT_LED, HIGH);
   DEBUG_LOGLN("Display setup done");
 }

@@ -9,14 +9,15 @@ class Main{
         uint16_t songColors[MAX_SONG], activeSongColor = _White, activeSongColorShade = _LightGray, nextSongColor = _LightGray, activeSectionColor = _LightGray;
         uint8_t selectedMode = 0, activeSectionIndex = 0;
         bool activeSongNameDisplayedOnce;
-        char activeSongName[MAX_SONG_NAME] = "Song Name";
+        char activeSongName[MAX_SONG_NAME] = "Empty Setlist";
         char activeSectionName[MAX_SONG_NAME] = "";
         char nextSectionName[MAX_SONG_NAME] = "Next Section";
         char nextSceneName[MAX_SONG_NAME] = "Next Scene";
         char sceneName[MAX_SONG_NAME] = "Scene Name";
         char trackName[MAX_SONG_NAME] = "Track Name";
         char looperName[MAX_SONG_NAME] = "Looper Name";
-        char markerName[MAX_SONG_NAME] = "Marker Name";
+        char leftMarkerName[MAX_SONG_NAME] = "Marker Name";
+        char rightMarkerName[MAX_SONG_NAME] = "Next Marker Name";
         float songPercentage = 0.0f;
         int currentSeconds = 0;
         int previousSeconds = 0;
@@ -28,8 +29,8 @@ class Main{
         float activeSongDuration;
         int setlistTotalTime = 0;
         char nextSongName[MAX_SONG_NAME] = "...";
-        uint8_t songsListSize = 8;
-        uint8_t setlistsListSize = 8;
+        uint8_t songsListSize = 0;
+        uint8_t setlistsListSize = 0;
         float activeSongStart, activeSongEnd, activeSectionStart, activeSectionEnd;
 
         int activeSongIndex, lastProgressBar = 0, previous_sec = 0;
@@ -40,37 +41,40 @@ class Main{
         void sendSongArrayRequest();
         void parseDisplayItem(uint8_t itemType, char* strBuf, int arg2);
         void parseArrayItem(uint8_t itemType, char* strBuf, uint8_t listIndex, uint8_t listLength);
-        void setSceneName(char* );
-        void setTrackName(char* );
-        void setActiveSongName(char* );
-        void setActiveSongColor(uint16_t );
-        void setActiveSongStart(float);
-        void setActiveSongEnd(float);
-        void setActiveSongIndex(int);
-        void setActiveSongDuration(float);
-        void setActiveSongProgress(float);
-        void setRemainingTimeInSet(float);
-        void setRemainingTimeInSong(float);
-        void setNextSongName(char* );
-        void setNextSongColor(uint16_t );
-        void setActiveSectionName(char* );
-        void setActiveSectionIndex(int);
-        void setActiveSectionStart(float);
-        void setActiveSectionEnd(float);
-        void setActiveSectionColor(uint16_t );
+        void onSceneName(char* );
+        void onTrackName(char* );
+        void onLooperName(char* );
+        void onLeftMarkerName(char* );
+        void onRightMarkerName(char* );
+        void onActiveSongName(char* );
+        void onActiveSongColor(uint16_t );
+        void onActiveSongStart(float);
+        void onActiveSongEnd(float);
+        void onActiveSongIndex(int);
+        void onActiveSongDuration(float);
+        void onActiveSongProgress(float);
+        void onRemainingTimeInSet(float);
+        void onRemainingTimeInSong(float);
+        void onNextSongName(char* );
+        void onNextSongColor(uint16_t );
+        void onActiveSectionName(char* );
+        void onActiveSectionIndex(int);
+        void onActiveSectionStart(float);
+        void onActiveSectionEnd(float);
+        void onActiveSectionColor(uint16_t );
         void setActiveSetlistName(char* );
-        void setSections(char sections[][MAX_SONG_NAME], int count);
-        void setSongs(char songs[][MAX_SONG_NAME], int count);
-        void setSongDurations(int durations[], int count);
-        void setSongColors(char colors[][MAX_SONG_NAME], int count);
-        void setCCReceived(uint8_t channel,uint8_t control,uint8_t value);
-        void setInformationMessage(const char* message, bool);
+        void onSections(char sections[][MAX_SONG_NAME], int count);
+        void onSongs(char songs[][MAX_SONG_NAME], int count);
+        void onSongDurations(int durations[], int count);
+        void onSongColors(char colors[][MAX_SONG_NAME], int count);
+        void onCCReceived(uint8_t channel,uint8_t control,uint8_t value);
+        void onInformationMessage(const char* message, bool);
         void updateSongProgress();
         void updateProgressBar();
 
         void configureButton(uint8_t user_mode, uint8_t controlNum, 
             uint8_t control_type, uint8_t control_cc, uint8_t control_ch, 
-            uint8_t isCustom, uint8_t toggled);
+            uint8_t isCustom, uint8_t toggled, uint8_t color);
         void configureLed(uint8_t user_mode, uint8_t controlNum, 
             uint8_t control_type, uint8_t control_led_cc, 
             uint8_t control_led_ch);

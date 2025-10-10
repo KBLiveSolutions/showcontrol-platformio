@@ -15,7 +15,7 @@ private:
     const char* filename;
     JsonDocument doc;
     JsonObject options;
-    JsonArray userPagesArray;
+    JsonArray pagesArray;
 
 public:
     JSONManager(const char* fname);
@@ -24,7 +24,7 @@ public:
     bool loadFile();
     bool saveFile();
 
-    bool writeJSONControl(int user_mode, int controlNum, int control_type, int control_cc, int control_ch, int isCustom, int toggled);
+    bool writeJSONControl(int user_mode, int controlNum, int control_type, int control_cc, int control_ch, int isCustom, int toggled, const char* actionName, int color, int luminance);
     // bool writeJSONPedal(int user_mode, int controlNum, int control_type, int control_cc, int control_ch, int isCustom, int toggled);
     bool writeJSONDisplay(int user_mode, int display_num, int display_type);
     bool writeOption(const char* key, int value);
@@ -40,7 +40,18 @@ public:
     int getDisplayBrightness() const;
     int getPort() const;
     // pedal_type getPedal(int index) const;
-    bool getPages();
+    // bool getPages();
+    control_type_t getControlType(int page, int control) const;
+    int getControlCC(int page, int control) const;
+    int getControlChannel(int page, int control) const;
+    int getControlToggle(int page, int control) const;
+    int getControlLedCC(int page, int control) const;
+    int getControlLedChannel(int page, int control) const;
+    int getControlCustom(int page, int control) const;
+    const char* getActionName(int page, int control, char* buffer, size_t bufferSize) const;
+    int getLedColorIndex(int page, int control) const;
+    bool getLuminance(int page, int control) const;
+    displayed_item_t getDisplayType(int page, int displayNum) const;
 
     // Envoi JSON
     void sendJSONConfig();

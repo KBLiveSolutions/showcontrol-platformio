@@ -78,7 +78,7 @@ void MenuPage::showPage() {
                 settings.userPagesAmount = max(0, min(settings.userPagesAmount, 8));
             }
 
-            activeMenuItem = 0;
+            activeMenuItem = mainParser.selectedMode;
             startIndex = 0;
             activeMenuSize = settings.userPagesAmount + 2;
             DEBUG_LOG_VALUE("Active menu size: ", activeMenuSize);

@@ -23,7 +23,7 @@ void Led::set_default() {
   b = initColor.b;
 }
 
-void Led::setIndexedColor(uint8_t color, uint8_t channel) {
+void Led::setIndexedColor(uint8_t color) {
   RGBColor paletteColor = LedConfig::getPaletteColor(color);
   r = paletteColor.r;
   g = paletteColor.g;

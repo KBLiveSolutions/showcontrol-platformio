@@ -7,6 +7,14 @@
  * @details Memory-efficient color management with PROGMEM storage
  */
 
+ uint16_t getColorFromIndex(uint8_t index) {
+    if (index < 128) {
+        RGBColor color = LedConfig::COLOR_PALETTE[index];
+        return ((color.r & 0xF8) << 8) | ((color.g & 0xFC) << 3) | (color.b >> 3);
+    }
+    return 0; // Default to black if index is out of range
+}
+
 // Configuration des rangées de LEDs (plus efficace et lisible)
 const LedRow LedConfig::LED_ROWS[6] PROGMEM = {
     LedRow(0),      // Rangée 0: LEDs 0, 1

@@ -66,7 +66,9 @@ void Settings::getItStarted(){
         DEBUG_LOGLN("Page change failed - falling back to splash page");
         switchActivePage(SPLASH_PAGE);
       }
-      getAblesetValues();
+      isRunning = true; // Set the running state to true
+      delay(500);  // Délai pour stabiliser après le changement de page
+      osc.getValues();
       DEBUG_LOGLN("getItStarted sequence completed");
       // Marquer comme terminé seulement à la fin
       // isRunning reste à true pour indiquer que l'application est active

@@ -201,6 +201,12 @@ void SettingsPage::clearSettingsSprites(){
     DEBUG_LOGLN("clearSettingsSprites: ipTxtSprite is null");
   }
   
+    if (idTxtSprite) {
+    showSprite("", defaultBgColor, idTxtSprite);
+  } else {
+    DEBUG_LOGLN("clearSettingsSprites: ipTxtSprite is null");
+  }
+  
   // showSprite("Port:", defaultTxtColor, portTxtSprite);
   // showSprite("_", defaultBgColor, submaskTxtSprite);      
   
@@ -217,6 +223,12 @@ void SettingsPage::clearSettingsSprites(){
 }
 
 void SettingsPage::showSetting(int selectedItem){
+  showSprite("Id Number: ", defaultTxtColor, idTxtSprite);
+  showSprite("LEDs:", defaultTxtColor, brightnessTxtSprite);
+  showSprite("Display:", defaultTxtColor, displayBrightTxtSprite);
+  showSprite("IP Address:", defaultTxtColor, ipTxtSprite);
+  showSprite("Port:", defaultTxtColor, portTxtSprite);
+  showSprite("Save & Exit", defaultTxtColor, exisSettingsSprite);
   // showSprite("Submask:", defaultTxtColor, submaskTxtSprite);
   for (int i=0; i<ITEMSAMNT; i++){
     switch (i) {
@@ -242,6 +254,9 @@ void SettingsPage::showSetting(int selectedItem){
         itemContent[i].intValue = showcontrolLocalPort;
         break;
       case 7:
+        itemContent[i].intValue = settings.idNumber;
+        break;
+      case 8:
         itemContent[i].charPtrValue = "Save & Exit";
         break;
       // case 8:
@@ -257,11 +272,6 @@ void SettingsPage::showSetting(int selectedItem){
     char buf[16];
     showSettingsSprite(i, toConstChar(itemContent[i], buf, sizeof(buf)), defaultTxtColor);
   }
-  showSprite("LEDs:", defaultTxtColor, brightnessTxtSprite);
-  showSprite("Display:", defaultTxtColor, displayBrightTxtSprite);
-  showSprite("IP Address:", defaultTxtColor, ipTxtSprite);
-  showSprite("Port:", defaultTxtColor, portTxtSprite);
-  showSprite("Save & Exit", defaultTxtColor, exisSettingsSprite);
 }
 
 void SettingsPage::showPage() {

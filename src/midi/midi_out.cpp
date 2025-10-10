@@ -30,26 +30,20 @@ static void createSysExHeader(uint8_t *buffer, uint8_t command) {
  * @brief Envoie la configuration des contrôles pour un mode donné
  * @param user_mode Mode utilisateur (0-4)
  */
-void midi::sendControls(uint8_t user_mode) {
+void midi::sendControls(uint8_t pageNum) {
   // Validation stricte du paramètre d'entrée
-  if (user_mode >= 5) {
-    DEBUG_LOG_VALUE("MIDI_OUT: Invalid user_mode in sendControls: ", user_mode);
+  if (pageNum >= 5) {
+    DEBUG_LOG_VALUE("MIDI_OUT: Invalid user_mode in sendControls: ", pageNum);
     return;
   }
-  
-  const uint8_t adjusted_mode = user_mode + 1;
-  const uint8_t mode_index = user_mode; // Pour l'index dans les tableaux (0-based)
-  
-  DEBUG_LOG_VALUE("MIDI_OUT: Send controls for mode: ", adjusted_mode);
-  
   // Envoi des configurations de contrôles
-  if (!midi::sendControlConfigurations(mode_index, adjusted_mode)) {
+  if (!midi::sendControlConfigurations(pageNum)) {
     DEBUG_LOGLN("MIDI_OUT: Failed to send control configurations");
     return;
   }
   
   // Envoi des configurations d'affichage
-  if (!midi::sendDisplayConfigurations(mode_index, adjusted_mode)) {
+  if (!midi::sendDisplayConfigurations(pageNum)) {
     DEBUG_LOGLN("MIDI_OUT: Failed to send display configurations");
     return;
   }
@@ -57,23 +51,17 @@ void midi::sendControls(uint8_t user_mode) {
   DEBUG_LOGLN("MIDI_OUT: Controls configuration sent successfully");
 }
 
-/**
- * @brief Envoie les configurations des boutons et LEDs pour un mode
- * @param mode_index Index du mode (0-based)
- * @param adjusted_mode Mode ajusté (1-based)
- * @return true si succès, false sinon
- */
-bool midi::sendControlConfigurations(uint8_t mode_index, uint8_t adjusted_mode) {
+bool midi::sendControlConfigurations(uint8_t pageNum) {
   for (uint8_t i = 0; i < NUM_CONTROLS; i++) {
     // Configuration du bouton
-    if (!midi::sendButtonConfiguration(mode_index, adjusted_mode, i)) {
+    if (!midi::sendButtonConfiguration(pageNum, i)) {
       DEBUG_LOG_VALUE("MIDI_OUT: Failed to send button config for control: ", i);
       return false;
     }
     delay(2);
     
     // Configuration du LED
-    if (!midi::sendLedConfiguration(mode_index, adjusted_mode, i)) {
+    if (!midi::sendLedConfiguration(pageNum, i)) {
       DEBUG_LOG_VALUE("MIDI_OUT: Failed to send LED config for control: ", i);
       return false;
     }
@@ -82,64 +70,40 @@ bool midi::sendControlConfigurations(uint8_t mode_index, uint8_t adjusted_mode) 
   return true;
 }
 
-/**
- * @brief Envoie la configuration d'un bouton spécifique
- * @param mode_index Index du mode (0-based)
- * @param adjusted_mode Mode ajusté (1-based)
- * @param control_index Index du contrôle
- * @return true si succès, false sinon
- */
-bool midi::sendButtonConfiguration(uint8_t mode_index, uint8_t adjusted_mode, uint8_t control_index) {
+bool midi::sendButtonConfiguration(uint8_t pageNum, uint8_t control_index) {
   if (control_index >= NUM_CONTROLS) {
     DEBUG_LOG_VALUE("MIDI_OUT: Invalid control_index in sendButtonConfiguration: ", control_index);
     return false;
   }
   
-  const uint8_t cc = pages[adjusted_mode].control_cc[control_index];
-  const uint8_t ch = pages[adjusted_mode].control_ch[control_index];
-  const uint8_t custom = pages[adjusted_mode].control_custom[control_index];
-  const uint8_t toggle = pages[adjusted_mode].control_toggle[control_index];
-  const uint8_t type = 1;
-  
   uint8_t button_config[SYSEX_BUTTON_CONFIG_SIZE];
-  createSysExHeader(button_config, CMD_CONFIGURE_BUTTON);
-  button_config[6] = mode_index;
+  createSysExHeader(button_config, CONFIGURE_BUTTON);
+  button_config[6] = pageNum;
   button_config[7] = control_index;
-  button_config[8] = type;
-  button_config[9] = cc;
-  button_config[10] = ch;
-  button_config[11] = custom;
-  button_config[12] = toggle;
+  button_config[8] = pages[pageNum].controls[control_index].type;
+  button_config[9] = pages[pageNum].controls[control_index].cc;
+  button_config[10] = pages[pageNum].controls[control_index].ch;
+  button_config[11] = pages[pageNum].controls[control_index].custom;
+  button_config[12] = pages[pageNum].controls[control_index].toggle;
   button_config[13] = SYSEX_END_BYTE;
   
   sendSysexToDAW(button_config, SYSEX_BUTTON_CONFIG_SIZE);
   return true;
 }
 
-/**
- * @brief Envoie la configuration d'un LED spécifique
- * @param mode_index Index du mode (0-based)
- * @param adjusted_mode Mode ajusté (1-based)
- * @param control_index Index du contrôle
- * @return true si succès, false sinon
- */
-bool midi::sendLedConfiguration(uint8_t mode_index, uint8_t adjusted_mode, uint8_t control_index) {
+bool midi::sendLedConfiguration(uint8_t pageNum, uint8_t control_index) {
   if (control_index >= NUM_CONTROLS) {
     DEBUG_LOG_VALUE("MIDI_OUT: Invalid control_index in sendLedConfiguration: ", control_index);
     return false;
   }
   
-  const uint8_t led_cc = pages[adjusted_mode].control_led_cc[control_index];
-  const uint8_t led_ch = pages[adjusted_mode].control_led_ch[control_index];
-  const uint8_t type = 1;
-  
   uint8_t led_config[SYSEX_LED_CONFIG_SIZE];
-  createSysExHeader(led_config, CMD_CONFIGURE_LED);
-  led_config[6] = mode_index;
+  createSysExHeader(led_config, CONFIGURE_LED);
+  led_config[6] = pageNum;
   led_config[7] = control_index;
-  led_config[8] = type;
-  led_config[9] = led_cc;
-  led_config[10] = led_ch;
+  led_config[8] = 1;
+  led_config[9] = pages[pageNum].controls[control_index].led_cc;
+  led_config[10] = pages[pageNum].controls[control_index].led_ch;
   led_config[11] = 0;
   led_config[12] = 0;
   led_config[13] = SYSEX_END_BYTE;
@@ -148,19 +112,13 @@ bool midi::sendLedConfiguration(uint8_t mode_index, uint8_t adjusted_mode, uint8
   return true;
 }
 
-/**
- * @brief Envoie les configurations d'affichage pour un mode
- * @param mode_index Index du mode (0-based)
- * @param adjusted_mode Mode ajusté (1-based)
- * @return true si succès, false sinon
- */
-bool midi::sendDisplayConfigurations(uint8_t mode_index, uint8_t adjusted_mode) {
+bool midi::sendDisplayConfigurations(uint8_t pageNum) {
   for (uint8_t i = 0; i < 3; i++) {
-    const uint8_t displayType = indexOfItem(pages[adjusted_mode].displayedItem[i]);
+    const uint8_t displayType = indexOfItem(pages[pageNum].displayedItem[i]);
     
     uint8_t display_config[SYSEX_DISPLAY_CONFIG_SIZE];
-    createSysExHeader(display_config, CMD_CONFIGURE_DISPLAY);
-    display_config[6] = mode_index;
+    createSysExHeader(display_config, CONFIGURE_DISPLAY);
+    display_config[6] = pageNum;
     display_config[7] = i;
     display_config[8] = displayType;
     display_config[9] = 0;
@@ -173,11 +131,6 @@ bool midi::sendDisplayConfigurations(uint8_t mode_index, uint8_t adjusted_mode) 
   return true;
 }
 
-/**
- * @brief Transfère un message vers le port USB MIDI (actuellement désactivé)
- * @param packet Paquet MIDI à transférer
- * @note Cette fonction est commentée car elle pourrait être utilisée à l'avenir
- */
 void midi::forwardMessageToUSBMIDI(uint8_t *packet) {
   // Fonction actuellement désactivée
   // Pourrait être implémentée plus tard si nécessaire
@@ -292,7 +245,7 @@ void midi::sendActiveSetlistChange(uint8_t setlistIndex) {
     SYSEX_DEVICE_ID, 
     SYSEX_FAMILY_ID_SEND, 
     SYSEX_FAMILY_ID_RECV, 
-    CMD_SETLIST_CHANGE, 
+    SETLIST_CHANGE, 
     setlistIndex, 
     SYSEX_END_BYTE 
   };
@@ -301,10 +254,7 @@ void midi::sendActiveSetlistChange(uint8_t setlistIndex) {
   sendSysexToDAW(setlist_change_msg, SYSEX_MSG_WITH_VALUE_SIZE);
 }
 
-/**
- * @brief Envoie un message vers le port USB MIDI
- * @param array Array contenant les données MIDI (doit être non-null et avoir au moins 4 éléments)
- */
+
 void midi::sendToUSBMIDIPort(uint8_t *array) {
   if (!array) {
     DEBUG_LOGLN("MIDI_OUT: Null array in sendToUSBMIDIPort");
@@ -334,14 +284,14 @@ void midi::sendUserPageAmount() {
     SYSEX_DEVICE_ID, 
     SYSEX_FAMILY_ID_SEND, 
     SYSEX_FAMILY_ID_RECV, 
-    CMD_SEND_PAGES_AMOUNT, 
+    SEND_PAGES_AMOUNT, 
     settings.userPagesAmount, 
     SYSEX_END_BYTE 
   };
   
   DEBUG_LOG_VALUE("MIDI_OUT: Sending pages amount: ", settings.userPagesAmount);
   sendSysexToDAW(pages_amount_msg, SYSEX_MSG_WITH_VALUE_SIZE);
-  sendOSCSysex(pages_amount_msg, SYSEX_MSG_WITH_VALUE_SIZE);
+  osc.sendSysex(pages_amount_msg, SYSEX_MSG_WITH_VALUE_SIZE);
 }
 
 /**
@@ -410,7 +360,7 @@ bool midi::sendLedBrightnessSetting() {
     SYSEX_DEVICE_ID, 
     SYSEX_FAMILY_ID_SEND, 
     SYSEX_FAMILY_ID_RECV, 
-    CMD_SEND_SETTINGS_LED, 
+    SEND_SETTINGS_LED, 
     settings.ledBrightness, 
     SYSEX_END_BYTE 
   };
@@ -433,7 +383,7 @@ bool midi::sendNightModeSetting() {
     SYSEX_DEVICE_ID, 
     SYSEX_FAMILY_ID_SEND, 
     SYSEX_FAMILY_ID_RECV, 
-    CMD_SEND_SETTINGS_NIGHT, 
+    SEND_SETTINGS_NIGHT, 
     night_mode_value, 
     SYSEX_END_BYTE 
   };
@@ -459,7 +409,7 @@ bool midi::sendDisplayBrightnessSetting() {
     SYSEX_DEVICE_ID, 
     SYSEX_FAMILY_ID_SEND, 
     SYSEX_FAMILY_ID_RECV, 
-    CMD_SEND_SETTINGS_DISPLAY, 
+    SEND_SETTINGS_DISPLAY, 
     settings.displayBrightness, 
     SYSEX_END_BYTE 
   };
@@ -477,7 +427,7 @@ bool midi::sendManualIPSetting() {
   static constexpr uint8_t SYSEX_IP_MSG_SIZE = 15;
   
   uint8_t ip_msg[SYSEX_IP_MSG_SIZE];
-  createSysExHeader(ip_msg, CMD_SEND_SETTINGS_IP);
+  createSysExHeader(ip_msg, SEND_SETTINGS_IP);
   
   // Encode chaque octet de l'IP en 7-bit
   for (uint8_t i = 0; i < 4; i++) {
@@ -510,7 +460,7 @@ bool midi::sendPortSetting() {
     SYSEX_DEVICE_ID, 
     SYSEX_FAMILY_ID_SEND, 
     SYSEX_FAMILY_ID_RECV, 
-    CMD_SEND_SETTINGS_PORT, 
+    SEND_SETTINGS_PORT, 
     port_msb, 
     port_lsb, 
     SYSEX_END_BYTE 
@@ -531,7 +481,7 @@ void midi::sendLiveHandshake() {
     SYSEX_DEVICE_ID, 
     SYSEX_FAMILY_ID_SEND, 
     SYSEX_FAMILY_ID_RECV, 
-    CMD_HANDSHAKE, 
+    HANDSHAKE, 
     SYSEX_END_BYTE 
   };
   
@@ -549,7 +499,7 @@ void midi::sendLiveUpdateRequest() {
     SYSEX_DEVICE_ID, 
     SYSEX_FAMILY_ID_SEND, 
     SYSEX_FAMILY_ID_RECV, 
-    CMD_LIVE_UPDATE, 
+    LIVE_UPDATE, 
     SYSEX_END_BYTE 
   };
   

@@ -65,24 +65,28 @@ ButtonSprite* userButtonSprite = new ButtonSprite {TFT_eSprite(&display), 3, 0, 
 int itemWidth = 48;
 int itemPadding = 4;
 int itemOffset = WIDTH / 4 + 64;
+int itemHeight = 36;
+int offsetV = 48;
 
-BasicSprite* brightnessTxtSprite = new BasicSprite { TFT_eSprite(&display), 3, 0, 64, 36, itemOffset, 8, 1};
-BasicSprite* brightnessSprite = new BasicSprite { TFT_eSprite(&display), 3, itemOffset, 64, 36, WIDTH/2, 8, 1};
-BasicSprite* displayBrightTxtSprite = new BasicSprite { TFT_eSprite(&display), 3, 0, 64 + HEIGHT/6, 36, itemOffset, 8, 1};
-BasicSprite* displayBrtSprite = new BasicSprite { TFT_eSprite(&display), 3, itemOffset, 64 + HEIGHT/6 , 36, WIDTH/2, 8, 1};
-BasicSprite* ipTxtSprite = new BasicSprite { TFT_eSprite(&display), 3, 0,  64 + 2 * HEIGHT/6 , 36, itemOffset, 8, 1};
+BasicSprite* brightnessTxtSprite = new BasicSprite { TFT_eSprite(&display), 3, 0,           offsetV + 0 * HEIGHT/8 ,    itemHeight, itemOffset, 8, 1};
+BasicSprite* brightnessSprite = new BasicSprite { TFT_eSprite(&display),    3, itemOffset,  offsetV + 0 * HEIGHT/8 ,    itemHeight, WIDTH/2, 8, 1};
+BasicSprite* displayBrightTxtSprite = new BasicSprite { TFT_eSprite(&display), 3, 0,        offsetV + 1 * HEIGHT/8 , itemHeight, itemOffset, 8, 1};
+BasicSprite* displayBrtSprite = new BasicSprite { TFT_eSprite(&display),    3, itemOffset,  offsetV + 1 * HEIGHT/8 , itemHeight, WIDTH/2, 8, 1};
+BasicSprite* ipTxtSprite = new BasicSprite { TFT_eSprite(&display),         3, 0,           offsetV + 2 * HEIGHT/8 , itemHeight, itemOffset, 8, 1};
 BasicSprite* ipSprite[4] = {
- new BasicSprite{TFT_eSprite(&display), 3, itemOffset, 64 + 2 * HEIGHT/6, 36, itemWidth, 8, 1},
- new BasicSprite{TFT_eSprite(&display), 3, itemOffset + itemWidth + itemPadding, 64 + 2 * HEIGHT/6, 36, itemWidth, 8, 1},
- new BasicSprite{TFT_eSprite(&display), 3, itemOffset + 2*itemWidth + itemPadding, 64 + 2 * HEIGHT/6, 36, itemWidth, 8, 1},
-new BasicSprite{TFT_eSprite(&display), 3, itemOffset + 3*itemWidth + itemPadding, 64 + 2 * HEIGHT/6, 36, itemWidth, 8, 1}
+ new BasicSprite{TFT_eSprite(&display),                                     3, itemOffset,  offsetV + 2 * HEIGHT/8, itemHeight, itemWidth, 8, 1},
+ new BasicSprite{TFT_eSprite(&display),                                     3, itemOffset + itemWidth + itemPadding, offsetV + 2 * HEIGHT/8, itemHeight, itemWidth, 8, 1},
+ new BasicSprite{TFT_eSprite(&display),                                     3, itemOffset + 2*itemWidth + itemPadding, offsetV + 2 * HEIGHT/8, itemHeight, itemWidth, 8, 1},
+ new BasicSprite{TFT_eSprite(&display),                                     3, itemOffset + 3*itemWidth + itemPadding, offsetV + 2 * HEIGHT/8, itemHeight, itemWidth, 8, 1}
 };
-BasicSprite* portTxtSprite = new BasicSprite { TFT_eSprite(&display), 3, 0, 64 + 3 * HEIGHT/6 , 36, itemOffset, 8, 1};
-BasicSprite* portSprite = new BasicSprite { TFT_eSprite(&display), 3, itemOffset, 64 + 3 * HEIGHT/6, 36, WIDTH/2, 8, 1};
-BasicSprite* exisSettingsSprite = new BasicSprite { TFT_eSprite(&display), 3, itemOffset, 64 + 4 * HEIGHT/6, 36, WIDTH/2, 8, 1};
+BasicSprite* portTxtSprite = new BasicSprite { TFT_eSprite(&display),       3, 0,           offsetV + 3 * HEIGHT/8 , itemHeight, itemOffset, 8, 1};
+BasicSprite* portSprite = new BasicSprite { TFT_eSprite(&display),          3, itemOffset,  offsetV + 3 * HEIGHT/8, itemHeight, WIDTH/2, 8, 1};
+BasicSprite* idTxtSprite = new BasicSprite { TFT_eSprite(&display),         3, 0,           offsetV + 4 * HEIGHT/8 ,    itemHeight, itemOffset, 8, 1};
+BasicSprite* idSprite = new BasicSprite { TFT_eSprite(&display),            3, itemOffset,  offsetV + 4 * HEIGHT/8 ,    itemHeight, WIDTH/2, 8, 1};
+BasicSprite* exisSettingsSprite = new BasicSprite { TFT_eSprite(&display),  3, WIDTH/4,  HEIGHT - offsetV , itemHeight, WIDTH/2, 8, 1};
 
 BasicSprite* settingSprites[ITEMSAMNT] = {
-  brightnessSprite, displayBrtSprite, ipSprite[0], ipSprite[1], ipSprite[2], ipSprite[3], portSprite, exisSettingsSprite
+  brightnessSprite, displayBrtSprite, ipSprite[0], ipSprite[1], ipSprite[2], ipSprite[3], portSprite, idSprite, exisSettingsSprite
 };
 
 
@@ -125,115 +129,11 @@ void showSprite(const char* text, uint16_t txtColor, BasicSprite* spriteName) {
   spriteName->sprite.deleteSprite();
 }
 
-
-  void clearSprite(BasicSprite* spriteName){
-    showSprite(" ", defaultBgColor, spriteName);
-  }
-
+void clearSprite(BasicSprite* spriteName){
+  showSprite(" ", defaultBgColor, spriteName);
+}
 
 void drawTopLine(){
   display.drawFastHLine(0, topBarHeight+5, WIDTH, _LightGray);
   display.drawFastHLine(0, topBarHeight+6, WIDTH, _LightGray);
 }
-
-
-// TOP BAR SPRITES
-
-// void showTempo(int tempo) {
-//   char tempoText[8];
-//   if (tempo < 0) {
-//     strcpy(tempoText, "N/A");
-//   } else {
-//     snprintf(tempoText, sizeof(tempoText), "%d", tempo);
-//   }
-//   showSprite(tempoText, _Amber, tempoSprite);
-// }
-
-// void showCounter(int global.current_beat) {
-//   if (global.current_beat < 1) {
-//     global.current_beat = 1; // Ensure global.current_beat is at least 1
-//   }
-//   char buffer[4];
-//   sprintf(buffer, "%d", global.current_beat);
-//   const char* result = buffer;
-//   showSpriteColor(result, defaultBgColor, _Amber, counterSprite, global.current_beat!=1) ;
-// }
-
-// void globalPage.showPageIcon(){
-//   int padding = 6;
-//   // showSpriteColor(itemToDisplay[10], defaultTxtColor, Blue, tempoSprite);
-//     modeSprite->sprite.createSprite(24, 24);
-//     modeSprite->sprite.setTextDatum(3); 
-//     uint16_t color = mainPage.selectedMode == 0 ? _SetlistBlue : _Purple;
-//     if (mainPage.selectedMode == 0) color = _Emerald;
-//     modeSprite->sprite.setTextColor(color, defaultBgColor);
-//     modeSprite->sprite.drawRect(0, 0, 16, 16, color);
-//     if (mainPage.selectedMode == 0) {
-//       modeSprite->sprite.drawFastHLine(4, 4, 8, color);
-//       modeSprite->sprite.drawFastHLine(4, 8, 8, color);
-//       modeSprite->sprite.drawFastHLine(4, 12, 8, color);
-//     }
-//     else if (mainPage.selectedMode == 0) {
-//       modeSprite->sprite.drawString("S", 4, topBarHeight/2 - 8, GFXFF);
-//     }
-//     else {
-//       char buffer[20];
-//       snprintf(buffer, sizeof(buffer), "U%u", mainPage.selectedMode);
-//       modeSprite->sprite.drawString(buffer, 2, topBarHeight/2 - 8, GFXFF);
-//     }
-//     modeSprite->sprite.pushSprite(modeSprite->positionX, modeSprite->positionY + 8);
-//     modeSprite->sprite.deleteSprite();
-
-// }
-
-// void globalPage.showTitle(char* optionText){
-//   // char optionText[20];
-//   // snprintf(optionText, sizeof(optionText), "User %u", mainPage.selectedMode);
-//   // if (mainPage.selectedMode == 0) strcpy(optionText, itemToDisplay[indexOfItem(ActiveSetlist)]);
-//   // else if (activePage->pageType == SETTINGS) strcpy(optionText, "Settings");
-//   showSprite(optionText, _LightGray, titleSprite);
-// }
-
-// void showAudioInterfaceScene(int settings.audioInterfaceScene){
-//   showSpriteColor((settings.audioInterfaceScene==1) ? "A":"B", defaultBgColor, (settings.audioInterfaceScene==1) ? _Green:_Red, sceneSprite, false) ;
-// }
-
-// void globalPage.showEthSprite(bool state, uint8_t num, uint16_t txtColor, BasicSprite* spriteName) {
-//   spriteName->sprite.createSprite(spriteName->width, spriteName->height);
-//   uint16_t color = txtColor;
-//   if(state)  {
-//     spriteName->sprite.fillRoundRect(3, 9, 34, 13, 6, _LightGray);
-//     spriteName->sprite.fillRoundRect(5, 11, 30, 9, 4, _Black);
-//     spriteName->sprite.fillRoundRect(8, 14, 24, 3, 2, _LightGray);
-//   }
-//   else {
-//       spriteName->sprite.drawRoundRect(0, 9, 24, 16, 2, color);
-//       spriteName->sprite.fillRoundRect(1, 10, 22, 14, 2, defaultBgColor);
-//       spriteName->sprite.drawRoundRect(1, 10, 22, 14, 2, color);
-//       spriteName->sprite.fillRect(4, 23, 16, 4, color);
-//       spriteName->sprite.fillRect(5, 12, 2, 3, color);
-//       spriteName->sprite.fillRect(9, 12, 2, 3, color);
-//       spriteName->sprite.fillRect(13, 12, 2, 3, color);
-//       spriteName->sprite.fillRect(17, 12, 2, 3, color);
-//   }  
-//   spriteName->sprite.setTextColor(_LightGray, defaultBgColor);
-//   spriteName->sprite.loadFont(FONT20);
-//   char buffer[4];  
-//   sprintf(buffer, "%d", num); 
-//   if (num>0) spriteName->sprite.drawString(buffer, 32, 8, GFXFF);
-//   spriteName->sprite.pushSprite(spriteName->positionX, spriteName->positionY);
-//   spriteName->sprite.unloadFont();
-//   spriteName->sprite.deleteSprite();
-// }
-
-// void globalPage.updateEthSprite(int amount){
-//   uint16_t color = _Red;
-//   if (mainPage.selectedMode == 0) {
-//      color = _LightGray;
-//   }
-//   globalPage.showEthSprite(settings.MIDIConnected, amount, color, ETHSprite);
-// }
-
-// MAIN PAGE SPRITES
-
-

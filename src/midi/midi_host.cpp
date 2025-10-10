@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "midi_host.h"
 #include "tusb.h"
+#include "../osc/OSCManager.h"
 
 Adafruit_USBH_Host USBHost;
 dev_info_t dev_info[CFG_TUH_DEVICE_MAX] = { 0 };
@@ -271,12 +272,16 @@ void MidiHost::read(){
       Serial.printf("%02X ", packet[i]);
     }
     Serial.println();
+    int packet_size = sizeof(packet); // Taille totale du tableau
+    if (packet_size > 1) {
+        OSCMessage msg("/showcontrol/extMIDI");
+        for (int j = 0; j < packet_size; ++j) { // Sauf le premier
+            msg.add(packet[j]);
+        }
+        osc.sendRawOSC(msg);
+        break; // On sort après l'envoi
+    }
   }
-  // Affiche le nombre de messages reçus toutes les 2 secondes
-  // if (millis() - last_debug > 2000) {
-  //   Serial.printf("[DEBUG] core0 a recu %lu messages MIDI\r\n", midi_count);
-  //   last_debug = millis();
-  // }
 }
 
 

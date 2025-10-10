@@ -8,7 +8,7 @@
 Global global;
 
 
-void Global::setLoopEnabled(bool enabled){
+void Global::onLoopEnabled(bool enabled){
     loopEnabled = enabled;
     if(activePage == &pages[0]) activePage->updateLoopSprite();
 };
@@ -52,14 +52,14 @@ void Global::setSigDenominator(int denominator){
     DEBUG_LOG("Signature denominator set to: ");
     DEBUG_LOGLN(sig_denominator);
 };
-void Global::setTempo(int newTempo){
+void Global::onTempo(int newTempo){
     tempo = newTempo;
     snprintf(tempoStr, sizeof(tempoStr), "%d", tempo);
     globalPage.showTempo();
     DEBUG_LOG("Tempo set to: ");
     DEBUG_LOGLN(tempoStr);
 };
-void Global::setIsPlaying(bool playing){
+void Global::onIsPlaying(bool playing){
     isPlaying = playing;
     if(activePage == &pages[0]) activePage->updatePlaySprite();
 };

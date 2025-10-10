@@ -17,6 +17,8 @@ struct BasicSprite {
 
 extern BasicSprite* mainSprite;
 extern int mainSpriteY;
+
+// TOP BAR
 extern BasicSprite* tempoSprite;
 extern BasicSprite* signatureSprite;
 extern BasicSprite* counterSprite;
@@ -26,6 +28,8 @@ extern BasicSprite* ETHSprite;
 extern BasicSprite* sceneSprite;
 extern int pedalSpriteWidth;
 extern BasicSprite* PedalSprite[2];
+
+// MAIN AREA
 extern int bottomSpriteHeight;
 extern int prePostWidth;
 extern int prePostHeight;
@@ -53,6 +57,7 @@ extern BasicSprite* mainUserSprite;
 extern BasicSprite* sub1UserSprite;
 extern BasicSprite* lockSprite;
 
+// USER PAGE
 struct ButtonSprite {
   TFT_eSprite sprite;
   int txtsize;
@@ -68,7 +73,13 @@ extern ButtonSprite* userButtonSprite;
 extern int itemWidth;
 extern int itemPadding;
 extern int itemOffset;
-#define ITEMSAMNT 8
+extern int itemHeight;
+extern int offsetV;
+
+// SETTINGS PAGE
+#define ITEMSAMNT 9
+extern BasicSprite* idTxtSprite;
+extern BasicSprite* idSprite;
 extern BasicSprite* brightnessTxtSprite;
 extern BasicSprite* brightnessSprite;
 extern BasicSprite* displayBrightTxtSprite;

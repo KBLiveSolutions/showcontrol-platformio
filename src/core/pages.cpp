@@ -7,6 +7,7 @@
 #include "globalParser.h"
 
 #include "../leds/leds.h"
+#include "../leds/led_utils.h"
 #include "../display/pages/mainPage.h"
 #include "../display/pages/settingsPage.h"
 #include "../display/pages/menuPage.h"
@@ -32,19 +33,6 @@ Page* activePage = &pages[0]; // ou SPLASH_PAGE
 Page::Page(uint8_t pageNumber, page_type pageType)
 : pageNumber(pageNumber), pageType(pageType) {
   DEBUG_LOG_VALUE("Page constructed: ", pageNumber);
-  // Initialisation basique pour éviter les problèmes d'optimisation agressive
-  // Note: l'avertissement du compilateur sur l'itération 8 semble être un faux positif
-  // lié à l'optimisation agressive, mais le code est fonctionnellement correct
-  
-  control_type[0] = control_type[1] = control_type[2] = control_type[3] = control_type[4] = CC;
-  control_cc[0] = control_cc[1] = control_cc[2] = control_cc[3] = control_cc[4] = 1;
-  control_ch[0] = control_ch[1] = control_ch[2] = control_ch[3] = control_ch[4] = 1;
-  control_toggle[0] = control_toggle[1] = control_toggle[2] = control_toggle[3] = control_toggle[4] = 0;
-  control_led_cc[0] = control_led_cc[1] = control_led_cc[2] = control_led_cc[3] = control_led_cc[4] = 1;
-  control_led_ch[0] = control_led_ch[1] = control_led_ch[2] = control_led_ch[3] = control_led_ch[4] = 1;
-  control_custom[0] = control_custom[1] = control_custom[2] = control_custom[3] = control_custom[4] = 0;
-  
-  // Initialisation sécurisée des tableaux de boutons
   memset(buttonPressed, false, sizeof(buttonPressed));
   memset(buttonState, 0, sizeof(buttonState));
   
@@ -55,14 +43,25 @@ Page::Page(uint8_t pageNumber, page_type pageType)
 }
 
 void setupPages() {
-  // Configuration optimisée avec des tableaux de données
-  static const uint8_t buttonCCs[] = {44, 12, 33, 34, 113};
-  static const uint8_t ledCCs[] = {1, 34, 33, 34, 113};
-  
-  for (uint8_t i = 0; i < 5; ++i) {
-    pages[0].setButtonControl(i, CC, buttonCCs[i], 15, 0, 0);
-    pages[0].setLedControl(i, CC, ledCCs[i], 15);
+  for (size_t i = 0; i < 6; i++){  
+    for (int j = 0; j < NUM_CONTROLS; ++j) {
+    pages[i].controls[j].type    = jsonManager.getControlType(i, j);
+    pages[i].controls[j].cc      = jsonManager.getControlCC(i, j);
+    pages[i].controls[j].ch      = jsonManager.getControlChannel(i, j);
+    pages[i].controls[j].toggle  = jsonManager.getControlToggle(i, j);
+    pages[i].controls[j].led_cc  = jsonManager.getControlLedCC(i, j);
+    pages[i].controls[j].led_ch  = jsonManager.getControlLedChannel(i, j);
+    pages[i].controls[j].custom  = jsonManager.getControlCustom(i, j);
+    jsonManager.getActionName(i, j, pages[i].controls[j].actionName, sizeof(pages[i].controls[j].actionName));
+    pages[i].controls[j].led_color  = jsonManager.getLedColorIndex(i, j);
+    pages[i].controls[j].color      = getColorFromIndex(pages[i].controls[j].led_color);
+    pages[i].controls[j].luminance  = jsonManager.getLuminance(i, j);
+    }
+    for(int j = 0; j < 2; j++){
+      pages[i].displayedItem[j] = jsonManager.getDisplayType(i, j);
+    }
   }
+  
   switchActivePage(SPLASH_PAGE);
   DEBUG_LOGLN("SETUP PAGES DONE");
 }

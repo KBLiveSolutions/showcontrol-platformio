@@ -7,18 +7,26 @@
 enum page_type { SETLIST, USER, SETTINGS, MENU, SPLASH, NONE };
 // typedef enum { ActiveSong, ActiveSection, NextSong } displayed_item_t; // Idem
 
+typedef struct {
+    uint8_t custom;
+    control_type_t type;
+    uint8_t led_cc;
+    uint8_t led_ch;
+    uint8_t led_color;
+    uint8_t luminance;
+    uint8_t cc;
+    uint8_t ch;
+    uint8_t toggle;
+    uint16_t color;
+    char actionName[32];
+} Control;
+
 struct Page {
     uint8_t pageNumber;
     page_type pageType;
     bool buttonPressed[8];
     uint8_t buttonState[8];
-    uint8_t control_custom[5];
-    control_type_t control_type[5];
-    uint8_t control_led_cc[5];
-    uint8_t control_led_ch[5];
-    uint8_t control_cc[5];
-    uint8_t control_ch[5];
-    uint8_t control_toggle[5];
+    Control controls[NUM_CONTROLS];
     uint8_t pedalState[2];
     uint8_t pedal_cc[2];
     uint8_t pedal_ch[2];
@@ -35,7 +43,8 @@ struct Page {
     void showSceneName();
     void showTrackName();
     void showLooperName();
-    void showMarkerName();
+    void showLeftMarkerName();
+    void showRightMarkerName();
     void showActiveSongName();
     void showActiveSectionName();
     void showNextSongName();
@@ -73,14 +82,14 @@ struct Page {
 
     uint8_t led[NUM_LEDS][3] = {{100, 100, 100}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
     void setRGBColor(uint8_t, uint8_t, uint8_t, uint8_t); // Exemple de méthode pour définir la couleur d'une LED
-    void checkLeds(uint8_t channel, uint8_t _control, uint8_t value);
+    void updateLed(uint8_t index, uint8_t value);
     void showLeds();
 
     // Configuration
-    void setDisplay(uint8_t display_num, uint8_t);
-    void setLedControl(uint8_t controlNum, control_type_t type, uint8_t cc, uint8_t channel);
-    void setButtonControl(uint8_t controlNum, control_type_t type, uint8_t cc, uint8_t channel, uint8_t custom, uint8_t toggled);
-    void setButtonControlShifted(uint8_t controlNum, control_type_t type, uint8_t cc, uint8_t channel);
+    // void setDisplay(uint8_t display_num, uint8_t);
+    // void setLedControl(uint8_t controlNum, control_type_t type, uint8_t cc, uint8_t channel);
+    // void setButtonControl(uint8_t controlNum, control_type_t type, uint8_t cc, uint8_t channel, uint8_t custom, uint8_t toggled);
+    // void setButtonControlShifted(uint8_t controlNum, control_type_t type, uint8_t cc, uint8_t channel);
     void setPedal(int controlNum, control_type_t type, uint8_t cc, uint8_t channel, uint8_t custom, uint8_t toggled);
 
     // Opérateur d'affectation

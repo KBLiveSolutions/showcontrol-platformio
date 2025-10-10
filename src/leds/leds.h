@@ -30,7 +30,7 @@ public:
   void begin();
   void set_default();
   void setRGBColor(uint8_t red, uint8_t green, uint8_t blue);
-  void setIndexedColor(uint8_t color, uint8_t channel);
+  void setIndexedColor(uint8_t color);
   void setInitColor();
   void show_color();
   void show_direct_color(int r, int g, int b);

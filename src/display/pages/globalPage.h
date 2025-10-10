@@ -9,7 +9,6 @@ public:
     void showCounter();
     void showAudioInterfaceScene();
     void showEthSprite(bool state, int) ;
-    void updateEthSprite(int);
     void showTitle();
     // void showPageIcon();
     void setupGlobalPage();

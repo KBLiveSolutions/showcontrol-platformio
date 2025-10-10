@@ -145,3 +145,4 @@ namespace LedUtils {
     static constexpr RGBColor MAGENTA = RGBColor(255, 0, 255);
 }
 
+extern uint16_t getColorFromIndex(uint8_t index);

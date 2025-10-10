@@ -4,6 +4,25 @@ Script SCons pour construire automatiquement le filesystem LittleFS.
 """
 
 from pathlib import Path
+import subprocess
+
+def after_buildfs(source, target, env):
+    build_dir = Path(env.subst("$BUILD_DIR"))
+    bin_path = build_dir / "littlefs.bin"
+    uf2_path = build_dir / "littlefs.uf2"
+    uf2conv = Path(env.subst("$PROJECT_DIR")) / "scripts" / "uf2conv.py"
+    if bin_path.exists():
+        print(f"🔄 Conversion {bin_path} → {uf2_path}")
+        subprocess.run(
+            ["python3", str(uf2conv), str(bin_path), "--base", "0x100000", "--output", str(uf2_path), "--verbose"],
+            check=True
+        )
+        if uf2_path.exists():
+            print(f"✅ Fichier UF2 généré : {uf2_path}")
+        else:
+            print(f"❌ Fichier UF2 NON généré : {uf2_path}")
+    else:
+        print("❌ Fichier littlefs.bin introuvable")
 
 def before_build(source, target, env):
     """Fonction appelée avant le build principal."""
@@ -27,13 +46,8 @@ def before_build(source, target, env):
     
     print("📦 [FILESYSTEM] Le filesystem sera construit automatiquement par PlatformIO")
 
-# Dans le contexte SCons
-try:
-    Import("env")
-    env.AddPreAction("$BUILD_DIR/firmware.bin", before_build)
-    print("✅ [FILESYSTEM] Script de pré-build configuré")
-except:
-    # Exécution directe pour test
-    if __name__ == "_mainParser__":
-        print("⚠️  Ce script doit être exécuté dans le contexte PlatformIO")
-        print("Utilisation: pio run")
+# --- Contexte PlatformIO/SCons ---
+Import("env")
+env.AddPostAction("buildfs", after_buildfs)
+env.AddPreAction("$BUILD_DIR/firmware.bin", before_build)
+print("✅ [FILESYSTEM] Script de pré-build et post-build configuré")

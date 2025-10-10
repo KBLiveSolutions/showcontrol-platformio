@@ -13,7 +13,7 @@ size_t sysExBufferSize = 0;
 uint8_t sysExBuffer[SYSEX_BUFFER_SIZE];
 
 void midi::onControlChange(uint8_t channel, uint8_t control, uint8_t value) {
-  mainParser.setCCReceived(channel, control, value);
+  mainParser.onCCReceived(channel, control, value);
 }
 
 // Fonction utilitaire pour valider l'en-tête SysEx
@@ -54,7 +54,7 @@ void midi::onSysEx(uint8_t *data, unsigned int _length) {
   DEBUG_LOG_VALUE("Processing SysEx command: ", command);
 
   switch (command) {
-    case CMD_IN_HANDSHAKE_REQUEST: { // Handshake avec l'éditeur
+    case HANDSHAKE_REQUEST: { // Handshake avec l'éditeur
       DEBUG_LOGLN("Handshake request received");
       const uint8_t editor_handshake[] = { 
         SYSEX_START_BYTE, SYSEX_MANUFACTURER_ID, SYSEX_DEVICE_ID, SYSEX_FAMILY_ID_IN, 19, 1, 
@@ -64,70 +64,70 @@ void midi::onSysEx(uint8_t *data, unsigned int _length) {
       break;
     }
     
-    case CMD_IN_MIDI_CONNECTED: { // MIDI Connection established
+    case MIDI_CONNECTED: { // MIDI Connection established
       settings.MIDIConnected = true;
       DEBUG_LOGLN("MIDI Connected");
       settings.getItStarted();
       break;
     }
     
-    case CMD_IN_SETTINGS_REQUEST: 
+    case SETTINGS_REQUEST: 
       DEBUG_LOGLN("Settings request received");
       sendSettings(); 
       break;
       
-    case CMD_IN_LIVE_UPDATE_REQUEST: 
+    case LIVE_UPDATE_REQUEST: 
       DEBUG_LOGLN("Live update request received");
       sendLiveUpdateRequest(); 
       break;
       
-    case CMD_IN_SEND_CONTROLS: 
+    case SEND_CONTROLS: 
       if (_length >= 7) {
         DEBUG_LOG_VALUE("Send controls for mode: ", data[6]);
         sendControls(data[6]); 
       }
       break;
       
-    case CMD_IN_USER_PAGES_REQUEST: 
+    case USER_PAGES_REQUEST: 
       DEBUG_LOGLN("User page amount request received");
       sendUserPageAmount(); 
       break;
       
-    case CMD_CONFIGURE_BUTTON: // Configure button
-      if (_length >= 13) {
+    case CONFIGURE_BUTTON: // Configure button
+      if (_length >= 14) {
         DEBUG_LOGLN("Configure button received");
-        mainParser.configureButton(data[6], data[7], data[8], data[9], data[10], data[11], data[12]); 
+        mainParser.configureButton(data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13]); 
       }
       break;
       
-    case CMD_IN_CONFIGURE_PEDAL: // Configure pedal (commented out)
+    case CONFIGURE_PEDAL: // Configure pedal (commented out)
       DEBUG_LOGLN("Configure pedal received (not implemented)");
       // mainParser.configurePedal(data[6], data[7], data[8], data[9], data[10], data[11], data[12]); 
       break;
       
-    case CMD_CONFIGURE_LED: // Configure LED
+    case CONFIGURE_LED: // Configure LED
       if (_length >= 11) {
         DEBUG_LOGLN("Configure LED received");
         mainParser.configureLed(data[6], data[7], data[8], data[9], data[10]); 
       }
       break;
       
-    case CMD_CONFIGURE_DISPLAY: // Configure display
+    case CONFIGURE_DISPLAY: // Configure display
       if (_length >= 9) {
         DEBUG_LOGLN("Configure display received");
         mainParser.configureDisplay(data[6], data[7], data[8]); 
       }
       break;
       
-    case CMD_IN_SET_PEDAL_TYPE: // Set pedal type (commented out)
+    case SET_PEDAL_TYPE: // Set pedal type (commented out)
       DEBUG_LOGLN("Set pedal type received (not implemented)");
       // setPedalType(data[6], data[7]); 
       break;
 
-    case CMD_IN_DISPLAY_ITEM:
-    case CMD_IN_ARRAY_ITEM: {
+    case DISPLAY_ITEM:
+    case ARRAY_ITEM: {
       // Validation de la longueur minimale
-      const int minLength = (command == CMD_IN_DISPLAY_ITEM) ? 9 : 9;
+      const int minLength = (command == DISPLAY_ITEM) ? 9 : 9;
       if (_length < minLength) {
         DEBUG_LOG_VALUE("SysEx message too short for command: ", command);
         break;
@@ -146,7 +146,7 @@ void midi::onSysEx(uint8_t *data, unsigned int _length) {
       strBuf[strLength] = '\0';
       
       DEBUG_LOG_VALUE("Processing string command: ", command);
-      if (command == CMD_IN_DISPLAY_ITEM) {
+      if (command == DISPLAY_ITEM) {
         parseDisplayItem(data[6], strBuf, data[_length - 2]);
       } else {
         mainParser.parseArrayItem(data[6], strBuf, data[_length - 3], data[_length - 2]);
@@ -154,10 +154,10 @@ void midi::onSysEx(uint8_t *data, unsigned int _length) {
       break;
     }
 
-    case CMD_IN_SET_IP: 
-    case CMD_IN_SET_DNS: 
-    case CMD_IN_SET_GATEWAY: 
-    case CMD_IN_SET_SUBNET: { // IP addresses
+    case SET_IP: 
+    case SET_DNS: 
+    case SET_GATEWAY: 
+    case SET_SUBNET: { // IP addresses
       if (_length < 14) {
         DEBUG_LOG_VALUE("SysEx message too short for IP command: ", command);
         break;
@@ -167,19 +167,19 @@ void midi::onSysEx(uint8_t *data, unsigned int _length) {
       extractIPFromSysEx(data, ip);
       
       switch (command) {
-        case CMD_IN_SET_IP: 
+        case SET_IP: 
           DEBUG_LOGLN("Setting IP address");
           settings.onIPReceived(ip); 
           break;
-        case CMD_IN_SET_DNS: 
+        case SET_DNS: 
           DEBUG_LOGLN("Setting DNS address");
           settings.onDNSReceived(ip); 
           break;
-        case CMD_IN_SET_GATEWAY: 
+        case SET_GATEWAY: 
           DEBUG_LOGLN("Setting Gateway address");
           settings.onGatewayReceived(ip); 
           break;
-        case CMD_IN_SET_SUBNET: 
+        case SET_SUBNET: 
           DEBUG_LOGLN("Setting Subnet mask");
           settings.onSubnetReceived(ip); 
           break;
@@ -187,7 +187,7 @@ void midi::onSysEx(uint8_t *data, unsigned int _length) {
       break;
     }
     
-    case CMD_IN_SET_PORT: { // Port configuration
+    case SET_PORT: { // Port configuration
       if (_length < 8) {
         DEBUG_LOGLN("SysEx message too short for port command");
         break;
@@ -198,7 +198,7 @@ void midi::onSysEx(uint8_t *data, unsigned int _length) {
       break;
     }
     
-    case CMD_IN_SET_DHCP: { // DHCP configuration
+    case SET_DHCP: { // DHCP configuration
       if (_length < 7) {
         DEBUG_LOGLN("SysEx message too short for DHCP command");
         break;
@@ -208,7 +208,7 @@ void midi::onSysEx(uint8_t *data, unsigned int _length) {
       break;
     }
     
-    case CMD_IN_SET_PAGES_AMOUNT: { // Pages amount
+    case SET_PAGES_AMOUNT: { // Pages amount
       if (_length < 7) {
         DEBUG_LOGLN("SysEx message too short for pages amount command");
         break;
@@ -218,7 +218,7 @@ void midi::onSysEx(uint8_t *data, unsigned int _length) {
       break;
     }
     
-    case CMD_IN_REMOVE_USER_PAGE: { // Remove user page
+    case REMOVE_USER_PAGE: { // Remove user page
       if (_length < 7) {
         DEBUG_LOGLN("SysEx message too short for remove page command");
         break;
@@ -228,14 +228,23 @@ void midi::onSysEx(uint8_t *data, unsigned int _length) {
       break;
     }
     
-    case CMD_IN_SET_BRIGHTNESS: 
-    case CMD_IN_SET_BRIGHTNESS_ALT: { // Display brightness
+    case SET_DISPLAY_BRIGHTNESS: { // Display brightness
       if (_length < 7) {
         DEBUG_LOGLN("SysEx message too short for brightness command");
         break;
       }
       DEBUG_LOG_VALUE("Setting display brightness: ", data[6]);
       settings.setDisplayBrightness(data[6]); 
+      break;
+    }
+    
+      case SET_LED_BRIGHTNESS: { // Display brightness
+      if (_length < 7) {
+        DEBUG_LOGLN("SysEx message too short for brightness command");
+        break;
+      }
+      DEBUG_LOG_VALUE("Setting display brightness: ", data[6]);
+      settings.setLedBrightness(data[6]); 
       break;
     }
     
@@ -407,7 +416,7 @@ void midi::parseDisplayItem(uint8_t itemType, char* strBuf, int arg2){
   if (displayedItem == Tempo) {
     const float tempoValue = atof(strBuf);
     DEBUG_LOG_VALUE("Setting tempo to: ", tempoValue);
-    global.setTempo(tempoValue);
+    global.onTempo(tempoValue);
     return;
   }
   
@@ -416,12 +425,12 @@ void midi::parseDisplayItem(uint8_t itemType, char* strBuf, int arg2){
 
     case SceneName:
       DEBUG_LOGLN("Setting scene name");
-      mainParser.setSceneName(strBuf);
+      mainParser.onSceneName(strBuf);
       break;
 
     case TrackName:
       DEBUG_LOGLN("Setting track name");
-      mainParser.setTrackName(strBuf);
+      mainParser.onTrackName(strBuf);
       break;
 
     case LooperName:
@@ -432,28 +441,28 @@ void midi::parseDisplayItem(uint8_t itemType, char* strBuf, int arg2){
     case Tempo: {
       const float tempoValue = atof(strBuf);
       DEBUG_LOG_VALUE("Setting tempo to: ", tempoValue);
-      global.setTempo(tempoValue);
+      global.onTempo(tempoValue);
     }
      break;
 
     case ActiveSong:
       DEBUG_LOGLN("Setting active song name");
-      mainParser.setActiveSongName(strBuf);
+      mainParser.onActiveSongName(strBuf);
       break;
       
     case ActiveSection:
       DEBUG_LOGLN("Setting active section name");
-      mainParser.setActiveSectionName(strBuf);
+      mainParser.onActiveSectionName(strBuf);
       break;
       
     case NextSong:
       DEBUG_LOGLN("Setting next song name");
-      mainParser.setNextSongName(strBuf);
+      mainParser.onNextSongName(strBuf);
       break;
       
     case ActiveSongIndex:
       DEBUG_LOG_VALUE("Setting active song index: ", arg2);
-      mainParser.setActiveSongIndex(arg2);
+      mainParser.onActiveSongIndex(arg2);
       break;
       
     case ActiveSongPosition:

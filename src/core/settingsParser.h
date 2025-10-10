@@ -13,7 +13,9 @@ class Settings{
         uint8_t userPagesAmount = 0;
         bool isLocked = false;
         bool isRunning = false; 
-        
+        int idNumber = 1;
+        bool shiftPressed = false;
+
         void configureDisplay(uint8_t user_mode, uint8_t display_num, uint8_t display_type);
         void storeActivePage(uint8_t pageNum);
         void parseDisplayItem(uint8_t itemType, char* strBuf, int arg2);

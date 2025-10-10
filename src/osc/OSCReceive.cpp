@@ -6,10 +6,19 @@
 #include "../display/colors.h"
 #include "../display/pages/globalPage.h"
 #include "../core/utils.h"
+#include "serviceManager.h"
 
 volatile bool oscMsgProcessing = false;
 unsigned long lastOscTime = 0;
 void receiveOSCMsg(char* _packetBuffer, int packetSize) {
+    // Ignorer les paquets venant de ShowControl si au moins un serveur Ableset est détecté
+    if (serviceManager.serviceCounts[0] > 0) {
+        if (showcontrolUdp.remotePort() == showcontrolAppInPort) {
+            DEBUG_OSC_LOG("Message ShowControl ignoré (Ableset détecté, port ShowControl)");
+            return;
+        }
+    }
+
     OSCMessage msg;
     
     // CORRECTION : Utiliser la taille du paquet UDP au lieu de chercher '\0'
@@ -21,15 +30,15 @@ void receiveOSCMsg(char* _packetBuffer, int packetSize) {
         String address = msg.getAddress();
         
         // DEBUG_OSC_LOG("OSC Message Received from: ");
-        // DEBUG_OSC_LOG(showcontrolUdp.remoteIP());
-        // DEBUG_OSC_LOG(" / ");
-        // DEBUG_OSC_LOG(showcontrolUdp.remotePort());
-        // DEBUG_OSC_LOG(" : ");
-        // DEBUG_OSC_LOG(msg.getAddress());
-        // DEBUG_OSC_LOG(" | UDP size: ");
-        // DEBUG_OSC_LOG(packetSize);
-        // DEBUG_OSC_LOG(" | OSC size: ");
-        // DEBUG_OSC_LOGLN(msg.size());
+        // DEBUG_OSC_LOG_CONT(showcontrolUdp.remoteIP());
+        // DEBUG_OSC_LOG_CONT(" / ");
+        // DEBUG_OSC_LOG_CONT(showcontrolUdp.remotePort());
+        // DEBUG_OSC_LOG_CONT(" : ");
+        // DEBUG_OSC_LOG_CONT(msg.getAddress());
+        // DEBUG_OSC_LOG_CONT(" | UDP size: ");
+        // DEBUG_OSC_LOG_CONT(packetSize);
+        // DEBUG_OSC_LOG_CONT(" | OSC size: ");
+        // DEBUG_OSC_LOG_CONT_LN(msg.size());
 
         // Routes OSC avec callbacks inline
         msg.route("/global/beatsPosition", [](OSCMessage &msg, int addrOffset) {
@@ -42,17 +51,17 @@ void receiveOSCMsg(char* _packetBuffer, int packetSize) {
         
         msg.route("/global/tempo", [](OSCMessage &msg, int addrOffset) {
           DEBUG_OSC_LOGLN("Tempo received");
-          global.setTempo(msg.getFloat(0));
+          global.onTempo(msg.getFloat(0));
         });
         
         msg.route("/global/isPlaying", [](OSCMessage &msg, int addrOffset) {
             DEBUG_OSC_LOGLN("Is Playing received");
-            global.setIsPlaying(msg.getInt(0));
+            global.onIsPlaying(msg.getInt(0));
         });
         
         msg.route("/setlist/loopEnabled", [](OSCMessage &msg, int addrOffset) {
             DEBUG_OSC_LOGLN("Loop enabled received");
-            global.setLoopEnabled(msg.getInt(0));
+            global.onLoopEnabled(msg.getInt(0));
         });
 
         msg.route("/global/timeSignature", [](OSCMessage &msg, int addrOffset) {
@@ -69,13 +78,13 @@ void receiveOSCMsg(char* _packetBuffer, int packetSize) {
         
         msg.route("/global/isLoadingFile", [](OSCMessage &msg, int addrOffset) {
             DEBUG_OSC_LOG("Ableset loading file: ");
-            DEBUG_OSC_LOGLN(msg.getInt(0));
+            DEBUG_OSC_LOG_CONT_LN(msg.getInt(0));
             // if(msg.getInt(0) == 0) mainParser.onNewSetLoaded();
         });
         
         msg.route("/global/isConnected", [](OSCMessage &msg, int addrOffset) {
             DEBUG_OSC_LOG("Ableset connected: ");
-            DEBUG_OSC_LOGLN(msg.getInt(0));
+            DEBUG_OSC_LOG_CONT_LN(msg.getInt(0));
         });
         
         msg.route("/global/isRecording", [](OSCMessage &msg, int addrOffset) {
@@ -122,7 +131,7 @@ void receiveOSCMsg(char* _packetBuffer, int packetSize) {
           DEBUG_OSC_LOGLN("Songs List received");
           int size = msg.size();
           DEBUG_OSC_LOG("songs size: ");
-          DEBUG_OSC_LOGLN(size);
+          DEBUG_OSC_LOG_CONT_LN(size);
           mainParser.songsListSize = size;
           for (int j = 0; j < size; j++) {
             char strBuf[MAX_SONG_NAME];
@@ -131,7 +140,7 @@ void receiveOSCMsg(char* _packetBuffer, int packetSize) {
               mainParser.songsList[j][i] = strBuf[i];
             }
             DEBUG_OSC_LOG("songs: ");
-            DEBUG_OSC_LOGLN(mainParser.songsList[j]);
+            DEBUG_OSC_LOG_CONT_LN(mainParser.songsList[j]);
           }
         });
         
@@ -153,7 +162,7 @@ void receiveOSCMsg(char* _packetBuffer, int packetSize) {
             DEBUG_OSC_LOGLN("Sections List received");
             int size = msg.size();
             DEBUG_OSC_LOG("onSections size: ");
-            DEBUG_OSC_LOGLN(size);
+            DEBUG_OSC_LOG_CONT_LN(size);
             for (int j = 0; j < size; j++) {
                 char strBuf[MAX_SONG_NAME];
                 msg.getString(j, strBuf, MAX_SONG_NAME);
@@ -170,53 +179,53 @@ void receiveOSCMsg(char* _packetBuffer, int packetSize) {
         msg.route("/setlist/activeSongName", [](OSCMessage &msg, int addrOffset) {
             char strBuf[128];  // Buffer plus grand pour accepter n'importe quelle chaîne
             msg.getString(0, strBuf, 128);
-            mainParser.setActiveSongName(strBuf);
+            mainParser.onActiveSongName(strBuf);
         });
         
         msg.route("/setlist/activeSongColor", [](OSCMessage &msg, int addrOffset) {
             char strBuf[32];
             msg.getString(1, strBuf, 32);
-            mainParser.setActiveSongColor(hexStringtoRGB565(strBuf));
+            mainParser.onActiveSongColor(hexStringtoRGB565(strBuf));
         });
         
         msg.route("/setlist/activeSongIndex", [](OSCMessage &msg, int addrOffset) {
-            mainParser.setActiveSongIndex(msg.getFloat(0));
+            mainParser.onActiveSongIndex(msg.getFloat(0));
         });
         
         msg.route("/setlist/activeSongStart", [](OSCMessage &msg, int addrOffset) {
-            mainParser.setActiveSongStart(msg.getFloat(0));
+            mainParser.onActiveSongStart(msg.getFloat(0));
         });
         
         msg.route("/setlist/activeSongEnd", [](OSCMessage &msg, int addrOffset) {
-            mainParser.setActiveSongEnd(msg.getFloat(0));
+            mainParser.onActiveSongEnd(msg.getFloat(0));
         });
         
         msg.route("/setlist/activeSongDuration", [](OSCMessage &msg, int addrOffset) {
-            mainParser.setActiveSongDuration(msg.getFloat(0));
+            mainParser.onActiveSongDuration(msg.getFloat(0));
         });
         
         msg.route("/setlist/activeSongProgress", [](OSCMessage &msg, int addrOffset) {
-            mainParser.setActiveSongProgress(msg.getFloat(0));
+            mainParser.onActiveSongProgress(msg.getFloat(0));
         });
         
         msg.route("/setlist/activeSectionName", [](OSCMessage &msg, int addrOffset) {
             char strBuf[128];  // Buffer plus grand pour accepter n'importe quelle chaîne
             msg.getString(0, strBuf, 128);
-            mainParser.setActiveSectionName(strBuf);
+            mainParser.onActiveSectionName(strBuf);
             DEBUG_OSC_LOG(F("activeSectionName changed: "));
-            DEBUG_OSC_LOGLN(mainParser.activeSectionName);
+            DEBUG_OSC_LOG_CONT_LN(mainParser.activeSectionName);
         });
         
         msg.route("/setlist/activeSectionIndex", [](OSCMessage &msg, int addrOffset) {
             mainParser.activeSectionIndex = (int) msg.getFloat(0);
             DEBUG_OSC_LOG(F("activeSectionIndex changed: "));
-            DEBUG_OSC_LOGLN(mainParser.activeSectionIndex);
+            DEBUG_OSC_LOG_CONT_LN(mainParser.activeSectionIndex);
         });
         
         msg.route("/setlist/nextSongName", [](OSCMessage &msg, int addrOffset) {
             char strBuf[128];  // Buffer plus grand pour accepter n'importe quelle chaîne
             msg.getString(0, strBuf, 128);
-            mainParser.setNextSongName(strBuf);
+            mainParser.onNextSongName(strBuf);
         });
         
         msg.route("/setlist/nextSectionName", [](OSCMessage &msg, int addrOffset) {
@@ -224,135 +233,111 @@ void receiveOSCMsg(char* _packetBuffer, int packetSize) {
         });
         
         msg.route("/setlist/remainingTimeInSong", [](OSCMessage &msg, int addrOffset) {
-            mainParser.setRemainingTimeInSong(msg.getFloat(0));
+            mainParser.onRemainingTimeInSong(msg.getFloat(0));
         });
         
         msg.route("/setlist/remainingTimeInSet", [](OSCMessage &msg, int addrOffset) {
-            mainParser.setRemainingTimeInSet(msg.getFloat(0));
+            mainParser.onRemainingTimeInSet(msg.getFloat(0));
         });
         
         msg.route("/subscribed", [](OSCMessage &msg, int addrOffset) {
             DEBUG_OSC_LOG("Subscribed message received from: ");
-            DEBUG_OSC_LOG(showcontrolUdp.remoteIP());
-            DEBUG_OSC_LOG(":");
-            DEBUG_OSC_LOGLN(showcontrolUdp.remotePort());
-            
-            // Chercher le service Ableset existant et le marquer comme souscrit
-            bool serviceFound = false;
-            bool wasFirstSubscription = false;
-            
-            for (int i = 0; i < ethernet.totalServiceCount; i++) {
-                if (ethernet.discoveredServices[i].serviceType == ABLESETSRV && 
-                    ethernet.discoveredServices[i].ip == showcontrolUdp.remoteIP()) {
-                    // Vérifier si c'est la première souscription
-                    if (!ethernet.discoveredServices[i].subscribed) {
-                        wasFirstSubscription = true;
-                        ethernet.discoveredServices[i].subscribed = true; // Mark the service as subscribed
-                        DEBUG_OSC_LOGLN("Ableset service marked as subscribed for the first time");
-                    }
-                    ethernet.discoveredServices[i].lastSeen = millis(); // Update last seen
-                    serviceFound = true;
-                    break;
-                }
-            }
-            
-            if (!serviceFound) {
-                DEBUG_OSC_LOGLN("WARNING: /subscribed received but no Ableset service found!");
-                // Ajouter le service depuis /subscribed (cas de fallback)
-                ethernet.addService(ABLESETSRV, showcontrolUdp.remoteIP(), showcontrolUdp.remotePort());
-                wasFirstSubscription = true;
-            }
-            
-            // Lancer l'interface utilisateur seulement pour le premier service Ableset souscrit
-            if (wasFirstSubscription && ethernet.serviceCounts[0] == 1) {
-                DEBUG_OSC_LOGLN("First Ableset subscription confirmed, calling getItStarted from /subscribed");
-                settings.getItStarted();
-                DEBUG_OSC_LOGLN("Subscribed to Ableset - UI started");
-            } else {
-                DEBUG_OSC_LOGLN("Ableset subscription confirmed but UI already initialized");
-            }
+            DEBUG_OSC_LOG_CONT(showcontrolUdp.remoteIP());
+            DEBUG_OSC_LOG_CONT(":");
+            DEBUG_OSC_LOG_CONT_LN(showcontrolUdp.remotePort());
+            settings.getItStarted();
         });
         
         msg.route("/heartbeat", [](OSCMessage &msg, int addrOffset) {
-            DEBUG_OSC_LOG("Heartbeat received from: ");
-            DEBUG_OSC_LOG(showcontrolUdp.remoteIP());
-            DEBUG_OSC_LOG(":");
-            DEBUG_OSC_LOGLN(showcontrolUdp.remotePort());
-            
+            // DEBUG_OSC_LOG("Heartbeat received from: ");
+            // DEBUG_OSC_LOG_CONT(showcontrolUdp.remoteIP());
+            // DEBUG_OSC_LOG_CONT(":");
+            // DEBUG_OSC_LOG_CONT_LN(showcontrolUdp.remotePort());
+            int isShowControl = msg.getInt(0); // 1 si ShowControl, 0 si Ableset
             bool serviceFound = false;
             
             // Chercher d'abord dans les services Ableset (comparer seulement IP et type)
-            for (int i = 0; i < ethernet.totalServiceCount; i++) {
-                if (ethernet.discoveredServices[i].serviceType == ABLESETSRV && 
-                    ethernet.discoveredServices[i].ip == showcontrolUdp.remoteIP()) {
-                    ethernet.discoveredServices[i].lastSeen = millis();
-                    DEBUG_OSC_LOGLN("Ableset service heartbeat - updating last seen");
+            for (int i = 0; i < serviceManager.totalServiceCount; i++) {
+                if (serviceManager.discoveredServices[i].ip == showcontrolUdp.remoteIP()) {
+                    serviceManager.discoveredServices[i].lastSeen = millis();
+                    // DEBUG_OSC_LOGLN("Running service heartbeat - updating last seen");
                     serviceFound = true;
-                    
                     // Fallback: si c'est le premier service Ableset et que l'UI n'est pas encore lancée,
                     // lancer l'UI maintenant (au cas où le message /subscribed n'est pas reçu)
-                    if (ethernet.serviceCounts[0] == 1 && !settings.isRunning) {
+                    if (serviceManager.totalServiceCount == 1 && !settings.isRunning) {
                         DEBUG_OSC_LOGLN("First Ableset heartbeat received and UI not running, calling getItStarted as fallback");
                         settings.getItStarted();
                     }
                     break;
                 }
             }
-            
-            // Si pas trouvé dans Ableset, chercher dans ShowControl
+
+            // Si aucun service trouvé, ajouter nouveau service 
+            // IMPORTANT: C'est ici que les services sont re-ajoutés après une reconnexion
             if (!serviceFound) {
-                for (int i = 0; i < ethernet.totalServiceCount; i++) {
-                    if (ethernet.discoveredServices[i].serviceType == SHOWCONTROLSRV && 
-                        ethernet.discoveredServices[i].ip == showcontrolUdp.remoteIP()) {
-                        ethernet.discoveredServices[i].lastSeen = millis();
-                        DEBUG_OSC_LOGLN("ShowControl service heartbeat updated");
-                        serviceFound = true;
-                        break;
-                    }
-                }
-            }
-            
-            // Si aucun service trouvé, ajouter comme service Ableset (par défaut)
-            // IMPORTANT: C'est ici que les services Ableset sont re-ajoutés après une reconnexion
-            if (!serviceFound) {
-                DEBUG_OSC_LOG("Service not found, adding Ableset service from heartbeat: ");
+                DEBUG_OSC_LOG("Service not found, adding service from heartbeat: ");
                 DEBUG_OSC_LOG(showcontrolUdp.remoteIP());
                 DEBUG_OSC_LOG(":");
-                DEBUG_OSC_LOGLN(showcontrolUdp.remotePort());
-                ethernet.addService(ABLESETSRV, showcontrolUdp.remoteIP(), showcontrolUdp.remotePort());
-                ethernet.listAllServices(); // Debug: lister tous les services après ajout
+                DEBUG_OSC_LOG_CONT_LN(showcontrolUdp.remotePort());
+                serviceManager.addService(isShowControl == 0 ? ABLESETSRV : SHOWCONTROLSRV, showcontrolUdp.remoteIP(), showcontrolUdp.remotePort());
+                serviceManager.listAllServices(); // Debug: lister tous les services après ajout
                 
-                // Note: getItStarted() sera appelé quand on recevra le message /subscribed
-                // qui confirme que l'abonnement fonctionne correctement
-            }
-        });
-        
-        // Handler pour les réponses ping de ShowControl
-        msg.route("/showcontrol/pong", [](OSCMessage &msg, int addrOffset) {
-            DEBUG_OSC_LOG("ShowControl pong received from: ");
-            DEBUG_OSC_LOGLN(showcontrolUdp.remoteIP());
-            
-            bool serviceFound = false;
-            for (int i = 0; i < ethernet.totalServiceCount; i++) {
-                if (ethernet.discoveredServices[i].serviceType == SHOWCONTROLSRV && 
-                    ethernet.discoveredServices[i].ip == showcontrolUdp.remoteIP()) {
-                    ethernet.discoveredServices[i].lastSeen = millis();
-                    DEBUG_OSC_LOGLN("ShowControl service pong updated");
-                    serviceFound = true;
-                    break;
-                }
-            }
-            
-            if (!serviceFound) {
-                DEBUG_OSC_LOG("ShowControl service not found, adding: ");
-                DEBUG_OSC_LOGLN(showcontrolUdp.remoteIP());
-                ethernet.addService(SHOWCONTROLSRV, showcontrolUdp.remoteIP(), showcontrolUdp.remotePort());
-                // Mise à jour immédiate de l'affichage
-                globalPage.showEthSprite(settings.MIDIConnected, ethernet.serviceCounts[0]);
             }
         });
 
-    } else {
+        msg.route("/showcontrol/sceneName", [](OSCMessage &msg, int addrOffset) {
+            char strBuf[128];  // Buffer plus grand pour accepter n'importe quelle chaîne
+            msg.getString(0, strBuf, 128);
+            mainParser.onSceneName(strBuf);
+        });
+        msg.route("/showcontrol/trackName", [](OSCMessage &msg, int addrOffset) {
+            char strBuf[128];  // Buffer plus grand pour accepter n'importe quelle chaîne
+            msg.getString(0, strBuf, 128);
+            mainParser.onTrackName(strBuf);
+        });
+                msg.route("/showcontrol/leftMarkerName", [](OSCMessage &msg, int addrOffset) {
+            char strBuf[128];  // Buffer plus grand pour accepter n'importe quelle chaîne
+            msg.getString(0, strBuf, 128);
+            mainParser.onLeftMarkerName(strBuf);
+        });
+                msg.route("/showcontrol/rightMarkerName", [](OSCMessage &msg, int addrOffset) {
+            char strBuf[128];  // Buffer plus grand pour accepter n'importe quelle chaîne
+            msg.getString(0, strBuf, 128);
+            mainParser.onRightMarkerName(strBuf);
+        });
+        msg.route("/showcontrol/looperName", [](OSCMessage &msg, int addrOffset) {
+            char strBuf[128];  // Buffer plus grand pour accepter n'importe quelle chaîne
+            msg.getString(0, strBuf, 128);
+            // mainParser.onLooperName(strBuf);
+        });
+        msg.route("/sysex", [](OSCMessage &msg, int addrOffset) {
+            DEBUG_OSC_LOGLN("Sysex message received");
+            int length = msg.getInt(0);
+            if (length > 0 && length <= 256) { // Limite la taille pour éviter les débordements
+                uint8_t sysex_msg[256];
+                for (int i = 0; i < length; i++) {
+                    sysex_msg[i] = (uint8_t)msg.getInt(i + 1);
+                }
+                osc.sendSysex(sysex_msg, length);
+            } else {
+                DEBUG_OSC_LOGLN("Invalid sysex length");
+            }
+        });
+        msg.route("/controlChange", [](OSCMessage &msg, int addrOffset) {
+            DEBUG_OSC_LOGLN("Control Change message received");
+            DEBUG_OSC_LOG("Args: ");
+            for (int i = 0; i < msg.size(); i++) {
+                DEBUG_OSC_LOG_CONT(msg.getInt(i));
+                DEBUG_OSC_LOG_CONT(" ");
+            }
+            DEBUG_OSC_LOGLN("");
+            int channel = msg.getInt(0);
+            int controller = msg.getInt(1);
+            int value = msg.getInt(2);
+            mainParser.onCCReceived(channel, controller, value);
+        });
+    }
+    else {
         DEBUG_OSC_LOG("Error OSC message - UDP size: ");
         DEBUG_OSC_LOG(packetSize);
         DEBUG_OSC_LOG(" | Error code: ");

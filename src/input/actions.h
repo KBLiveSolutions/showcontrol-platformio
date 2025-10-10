@@ -16,8 +16,6 @@ class Action {
     void onLockButtonRelease();
     void onPedalPress(uint8_t idx);
     void onLongPedalPress(uint8_t idx);
-
-    bool shift = false;
 };
 
 extern Action actions;
